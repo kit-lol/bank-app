@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход | SEA Bank</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="background-blur blur-1"></div>
+<div class="background-blur blur-2"></div>
+<header>
+    <div class="logo" onclick="window.location.href='/'" style="cursor:pointer;">SEA</div>
+    <nav>
+        <a href="/" class="nav-link">Главная</a>
+        <a href="/register" class="btn btn-outline">Стать клиентом</a>
+    </nav>
+</header>
+<section class="auth-page">
+    <div class="auth-wrapper">
+        <div class="glass-card auth-info">
+            <span class="hero-badge">SEA BANK</span>
+            <h1>Добро пожаловать обратно.</h1>
+            <p>Войдите в личный кабинет для управления счетами, переводами, вкладами и инвестициями.</p>
+            <div class="auth-benefits">
+                <div><strong>🛡 Безопасность</strong><p>AES-256 и двухфакторная защита.</p></div>
+                <div><strong>⚡ Мгновенные операции</strong><p>Переводы внутри SEA менее чем за секунду.</p></div>
+                <div><strong>💎 Premium Service</strong><p>Персональный менеджер 24/7.</p></div>
+            </div>
+        </div>
+        <div class="glass-card auth-form-box">
+            <h2>Вход в систему</h2>
+            <p class="auth-subtitle">Используйте данные своей учетной записи.</p>
+            <form action="/login" method="POST" class="auth-form">
+                <input type="text" name="username" placeholder="Логин" required>
+                <input type="password" name="password" placeholder="Пароль" required>
+                <button type="submit" class="btn btn-primary">Войти</button>
+            </form>
+            <div class="auth-footer">Нет аккаунта? <a href="/register">Зарегистрироваться</a></div>
+        </div>
+    </div>
+</section>
+<script src="/static/js/script.js"></script>
+</body>
+</html>

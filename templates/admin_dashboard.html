@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель | SEA Bank</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="background-blur blur-1"></div>
+<div class="background-blur blur-2"></div>
+
+<header>
+    <div class="logo" onclick="window.location.href='/'" style="cursor:pointer;">SEA</div>
+    <nav>
+        <a href="/dashboard" class="nav-link">Личный кабинет</a>
+        <a href="/logout" class="btn btn-outline">Выйти</a>
+    </nav>
+</header>
+
+<section class="container" style="padding: 40px 0;">
+    <div class="card">
+        <span class="hero-badge">ADMIN PANEL</span>
+        <h1 style="margin-bottom: 10px;">Панель администратора</h1>
+        <p style="color: var(--gray);">Управление пользователями, балансами и статусами аккаунтов.</p>
+    </div>
+
+    <div class="admin-stats-grid">
+        <div class="admin-stat">
+            <h2>{{ len . }}</h2>
+            <p>Всего пользователей</p>
+        </div>
+        <div class="admin-stat">
+            <h2>
+                {{ $active := 0 }}
+                {{ range . }}{{ if .IsActive }}{{ $active = 1 }}{{ end }}{{ end }}
+                {{ $active }}
+            </h2>
+            <p>Активных пользователей</p>
+        </div>
+        <div class="admin-stat">
+            <h2>
+                {{ $blocked := 0 }}
+                {{ range . }}{{ if not .IsActive }}{{ $blocked = 1 }}{{ end }}{{ end }}
+                {{ $blocked }}
+            </h2>
+            <p>Заблокированных</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Список пользователей</h3>
+        <p style="color: var(--gray); margin-bottom: 20px;">Всего в списке: {{ len . }} пользователей</p>
+
+        <div class="admin-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Логин</th>
+                        <th>Баланс</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range . }}
+                    <tr>
+                        <td><strong>#{{ .ID }}</strong></td>
+                        <td>{{ .Username }}</td>
+                        <td><strong>{{ printf "%.2f" .Balance }} ₽</strong></td>
+                        <td>
+                            {{ if .IsActive }}
+                            <span class="status-active">● Активен</span>
+                            {{ else }}
+                            <span class="status-blocked">● Заблокирован</span>
+                            {{ end }}
+                        </td>
+                        <td>
+                            <div class="admin-actions">
+                                <form action="/admin/action" method="POST">
+                                    <input type="hidden" name="user_id" value="{{ .ID }}">
+                                    <input class="input-small" type="number" name="amount" step="0.01" placeholder="Сумма" required>
+                                    <button class="btn-small btn-small-add" name="action" value="add_funds">+ Пополнить</button>
+                                    <button class="btn-small btn-small-sub" name="action" value="withdraw_funds">- Снять</button>
+                                    <button class="btn-small btn-small-toggle" name="action" value="toggle_status">
+                                        {{ if .IsActive }}🔒 Заблокировать{{ else }}🔓 Разблокировать{{ end }}
+                                    </button>
+                                    <button class="btn-small btn-small-view" name="action" value="view_user">👤 Управление</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="/dashboard" class="btn btn-outline">← Вернуться в личный кабинет</a>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-grid">
+        <div>
+            <div class="footer-logo">SEA</div>
+            <p>Premium Digital Banking</p>
+        </div>
+        <div>
+            <h4>Навигация</h4>
+            <a href="/">Главная</a>
+            <a href="/dashboard">Личный кабинет</a>
+        </div>
+        <div>
+            <h4>Админ</h4>
+            <a href="/admin">Панель управления</a>
+        </div>
+        <div>
+            <h4>Поддержка</h4>
+            <p>support@sea.bank</p>
+            <p>Работаем 24/7</p>
+        </div>
+    </div>
+    <div class="footer-bottom">© 2026 SEA Bank. Все права защищены.</div>
+</footer>
+
+<script src="/static/js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <title>Открыть вклад | SEA Bank</title>
+</head>
+<body>
+    <div class="background-blur blur-1"></div>
+    <div class="background-blur blur-2"></div>
+
+    <header>
+        <div class="logo" onclick="window.location.href='/';" style="cursor: pointer;">SEA</div>
+        <nav>
+            <a href="/dashboard" class="nav-link">Личный кабинет</a>
+            <a href="/logout" class="btn btn-outline">Выйти</a>
+        </nav>
+    </header>
+
+    <section class="auth-page">
+        <div class="auth-wrapper">
+            <div class="glass-card auth-info">
+                <span class="hero-badge">НОВЫЙ ВКЛАД</span>
+                <h1>Откройте вклад<br>с выгодной ставкой</h1>
+                <p>Выберите подходящий тип вклада, укажите сумму и начните зарабатывать уже сегодня. Все вклады застрахованы и защищены.</p>
+                <div class="auth-benefits">
+                    <div>
+                        <strong>📈 Доходность до 15%</strong>
+                        <p>Максимальная ставка по вкладу Ocean+.</p>
+                    </div>
+                    <div>
+                        <strong>🛡 Надежность</strong>
+                        <p>Все вклады застрахованы и защищены.</p>
+                    </div>
+                    <div>
+                        <strong>⚡ Мгновенное открытие</strong>
+                        <p>Счет открывается за несколько секунд.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card auth-form-box">
+                <h2>Открыть вклад</h2>
+                <p class="auth-subtitle">Заполните форму для открытия нового вклада.</p>
+
+                <form action="/create-deposit" method="POST" class="auth-form">
+                    <label style="color: var(--gray); font-size: 14px; font-weight: 500;">Тип вклада</label>
+                    <select name="type_id" class="input-sea" style="width: 100%; padding: 17px;" required>
+                        {{ range . }}
+                        <option value="{{ .ID }}">{{ .Name }} (Ставка: {{ .InterestRate }}%)</option>
+                        {{ end }}
+                    </select>
+
+                    <label style="color: var(--gray); font-size: 14px; font-weight: 500; margin-top: 5px;">Сумма вклада</label>
+                    <input type="number" name="amount" class="input-sea" step="0.01" min="1000" placeholder="Сумма" style="width: 100%; padding: 17px;" required>
+
+                    <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Открыть вклад</button>
+                </form>
+
+                <div class="auth-footer">
+                    <a href="/dashboard">← Вернуться в личный кабинет</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="products container" style="padding-top:40px;">
+    <div class="section-title">
+        <span>ВКЛАДЫ SEA</span>
+        <h2>Доступные программы</h2>
+        <p>Выберите вклад, который подходит именно вам.</p>
+    </div>
+
+    <div class="deposit-grid">
+
+{{ range . }}
+
+<div class="deposit-card
+{{ if eq .Name "TIDAL FLEX" }}tidal{{ end }}
+{{ if eq .Name "DEEP SAVER" }}deep{{ end }}
+{{ if eq .Name "CORAL FIX" }}coral{{ end }}
+{{ if eq .Name "OCEAN ELITE" }}elite{{ end }}
+{{ if eq .Name "HARBOUR GOLD" }}gold{{ end }}">
+
+    <div class="deposit-header">
+
+        <div class="deposit-circle">
+
+            {{ if eq .Name "TIDAL FLEX" }}
+            ♒︎
+            {{ else if eq .Name "DEEP SAVER" }}
+            🐚
+            {{ else if eq .Name "CORAL FIX" }}
+            🪸
+            {{ else if eq .Name "OCEAN ELITE" }}
+            💎
+            {{ else }}
+            ⚓
+            {{ end }}
+
+        </div>
+
+        <div>
+
+            <h3>{{ .Name }}</h3>
+
+            <span class="deposit-pill">
+
+            {{ if eq .Name "TIDAL FLEX" }}
+            ГИБКИЙ
+            {{ else if eq .Name "DEEP SAVER" }}
+            ОПТИМАЛЬНЫЙ
+            {{ else if eq .Name "CORAL FIX" }}
+            ВЫГОДНЫЙ
+            {{ else if eq .Name "OCEAN ELITE" }}
+            ПРЕМИУМ
+            {{ else }}
+            УНИВЕРСАЛЬНЫЙ
+            {{ end }}
+
+            </span>
+
+        </div>
+
+    </div>
+
+    <div class="deposit-rate">
+
+        <span>Доходность</span>
+
+        <h2>{{ .InterestRate }}%</h2>
+
+        <p>годовых</p>
+
+    </div>
+
+    <div class="deposit-table">
+
+        <div class="deposit-row">
+
+            <span>Минимальная сумма</span>
+
+            <b>
+
+            {{ if eq .Name "TIDAL FLEX" }}
+            1 000 ₽
+            {{ else if eq .Name "DEEP SAVER" }}
+            5 000 ₽
+            {{ else if eq .Name "CORAL FIX" }}
+            50 000 ₽
+            {{ else if eq .Name "OCEAN ELITE" }}
+            500 000 ₽
+            {{ else }}
+            1 000 ₽
+            {{ end }}
+
+            </b>
+
+        </div>
+
+        <div class="deposit-row">
+
+            <span>Пополнение</span>
+
+            <b>
+
+            {{ if or (eq .Name "TIDAL FLEX") (eq .Name "DEEP SAVER") (eq .Name "HARBOUR GOLD") }}
+            Да
+            {{ else }}
+            Нет
+            {{ end }}
+
+            </b>
+
+        </div>
+
+        <div class="deposit-row">
+
+            <span>Снятие</span>
+
+            <b>
+
+            {{ if or (eq .Name "TIDAL FLEX") (eq .Name "HARBOUR GOLD") }}
+            Да
+            {{ else }}
+            Нет
+            {{ end }}
+
+            </b>
+
+        </div>
+
+    </div>
+
+    <div class="deposit-description">
+        {{ .Description }}
+    </div>
+
+</div>
+
+{{ end }}
+
+</div>
+</section>
+
+    <footer>
+        <div class="footer-grid">
+            <div>
+                <div class="footer-logo">SEA</div>
+                <p>Premium Digital Banking</p>
+            </div>
+            <div>
+                <h4>Навигация</h4>
+                <a href="/">Главная</a>
+                <a href="/dashboard">Личный кабинет</a>
+            </div>
+            <div>
+                <h4>Аккаунт</h4>
+                <a href="/logout">Выйти</a>
+            </div>
+            <div>
+                <h4>Поддержка</h4>
+                <p>support@sea.bank</p>
+                <p>Работаем 24/7</p>
+            </div>
+        </div>
+        <div class="footer-bottom">© 2026 SEA Bank. Все права защищены.</div>
+    </footer>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>

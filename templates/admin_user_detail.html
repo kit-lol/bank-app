@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление пользователем | SEA Bank</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+<div class="background-blur blur-1"></div>
+<div class="background-blur blur-2"></div>
+
+<header>
+    <div class="logo" onclick="window.location.href='/'" style="cursor:pointer;">SEA</div>
+    <nav>
+        <a href="/admin" class="nav-link">Админ-панель</a>
+        <a href="/dashboard" class="nav-link">Личный кабинет</a>
+        <a href="/logout" class="btn btn-outline">Выйти</a>
+    </nav>
+</header>
+
+<section class="container" style="padding: 40px 0;">
+    <div class="card">
+        <span class="hero-badge">ADMIN PANEL</span>
+        <h1 style="margin-bottom: 10px;">Управление пользователем #{{ .UserID }}</h1>
+        <p style="color: var(--gray);">Детальная информация о пользователе, его вкладах и операциях.</p>
+        <div style="margin-top: 20px;">
+            <a href="/admin" class="btn btn-outline" style="padding: 10px 20px; font-size: 14px;">← Назад к списку пользователей</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>💼 Вклады пользователя</h3>
+        <p style="color: var(--gray); margin-bottom: 20px;">Всего вкладов: {{ len .Deposits }}</p>
+
+        <div class="admin-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Сумма</th>
+                        <th>Ставка</th>
+                        <th>Статус</th>
+                        <th>Дата открытия</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Deposits }}
+                    <tr>
+                        <td><strong>#{{ .ID }}</strong></td>
+                        <td><strong>{{ printf "%.2f" .Amount }} ₽</strong></td>
+                        <td><span style="color: var(--yellow); font-weight: 700;">{{ .InterestRate }}%</span></td>
+                        <td>
+                            {{ if eq .Status "ACTIVE" }}
+                            <span class="status-active">● Активен</span>
+                            {{ else if eq .Status "CLOSED" }}
+                            <span class="status-blocked">● Закрыт</span>
+                            {{ else }}
+                            <span class="status-pending">● {{ .Status }}</span>
+                            {{ end }}
+                        </td>
+                        <td>{{ .CreatedAt.Format "02.01.2006" }}</td>
+                        <td>
+                            {{ if eq .Status "ACTIVE" }}
+                            <form action="/admin/close-deposit" method="POST" style="display: inline;">
+                                <input type="hidden" name="deposit_id" value="{{ .ID }}">
+                                <input type="hidden" name="user_id" value="{{ $.UserID }}">
+                                <button class="btn-small btn-small-danger" type="submit">Закрыть вклад</button>
+                            </form>
+                            {{ else }}
+                            <span style="color: var(--gray); font-size: 13px;">—</span>
+                            {{ end }}
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding: 40px; color: var(--gray);">
+                            У пользователя нет активных вкладов.
+                        </td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📊 История транзакций</h3>
+        <p style="color: var(--gray); margin-bottom: 20px;">Всего операций: {{ len .Transactions }}</p>
+
+        <div class="admin-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Тип операции</th>
+                        <th>Сумма</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{ range .Transactions }}
+                    <tr>
+                        <td>{{ .CreatedAt.Format "02.01.2006 15:04" }}</td>
+                        <td>{{ .OperationType }}</td>
+                        <td>
+                            <strong>
+                                {{ if or (eq .OperationType "Пополнение") (eq .OperationType "Deposit") (eq .OperationType "Пополнение счета") }}
+                                +{{ printf "%.2f" .Amount }} ₽
+                                {{ else if or (eq .OperationType "Снятие") (eq .OperationType "Withdraw") (eq .OperationType "Снятие со счета") }}
+                                -{{ printf "%.2f" .Amount }} ₽
+                                {{ else }}
+                                {{ printf "%.2f" .Amount }} ₽
+                                {{ end }}
+                            </strong>
+                        </td>
+                    </tr>
+                    {{ else }}
+                    <tr>
+                        <td colspan="3" style="text-align:center; padding: 40px; color: var(--gray);">
+                            История операций пока пуста.
+                        </td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="/admin" class="btn btn-outline">← Вернуться в админ-панель</a>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-grid">
+        <div>
+            <div class="footer-logo">SEA</div>
+            <p>Premium Digital Banking</p>
+        </div>
+        <div>
+            <h4>Навигация</h4>
+            <a href="/">Главная</a>
+            <a href="/dashboard">Личный кабинет</a>
+            <a href="/admin">Админ-панель</a>
+        </div>
+        <div>
+            <h4>Аккаунт</h4>
+            <a href="/logout">Выйти</a>
+        </div>
+        <div>
+            <h4>Поддержка</h4>
+            <p>support@sea.bank</p>
+            <p>Работаем 24/7</p>
+        </div>
+    </div>
+    <div class="footer-bottom">© 2026 SEA Bank. Все права защищены.</div>
+</footer>
+
+<script src="/static/js/script.js"></script>
+</body>
+</html>
