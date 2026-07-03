@@ -1,11 +1,12 @@
 package service
 
 import (
+	"bank-app/logger"
 	"database/sql"
-	"fmt"
+
+	"go.uber.org/zap"
 )
 
-// Структура для хранения данных о вкладе перед обновлением
 type DepositData struct {
 	ID       int
 	UserID   int
@@ -14,7 +15,8 @@ type DepositData struct {
 }
 
 func AccrueInterest(db *sql.DB) {
-	// 1. Выбираем данные в память (отдельный запрос)
+	logger.Log.Info("Начало процесса начисления процентов...")
+
 	rows, err := db.Query(`
 		SELECT id, user_id, amount, (amount * interest_rate / 100 / 365) as interest 
 		FROM deposits 
@@ -22,7 +24,7 @@ func AccrueInterest(db *sql.DB) {
 		AND last_accrual < NOW() - INTERVAL '10 minute'`)
 
 	if err != nil {
-		fmt.Printf("Ошибка запроса данных: %v\n", err)
+		logger.Log.Error("Ошибка запроса данных для начисления процентов", zap.Error(err))
 		return
 	}
 
@@ -32,34 +34,31 @@ func AccrueInterest(db *sql.DB) {
 		rows.Scan(&d.ID, &d.UserID, &d.Amount, &d.Interest)
 		toUpdate = append(toUpdate, d)
 	}
-	rows.Close() // ЗАКРЫВАЕМ rows ДО начала обновлений
+	rows.Close()
 
-	// 2. Теперь выполняем обновления
 	if len(toUpdate) == 0 {
+		logger.Log.Info("Нет активных вкладов для начисления процентов")
 		return
 	}
 
+	successCount := 0
 	for _, d := range toUpdate {
 		tx, err := db.Begin()
 		if err != nil {
 			continue
 		}
 
-		// Обновляем вклад
 		_, err = tx.Exec("UPDATE deposits SET amount = amount + $1, last_accrual = NOW() WHERE id = $2", d.Interest, d.ID)
-
-		// Записываем в историю
-		_, err = tx.Exec(`
-			INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) 
-			VALUES ($1, $2, $3, 'ACCRUAL', NOW())`, d.UserID, d.ID, d.Interest)
+		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'ACCRUAL', NOW())`, d.UserID, d.ID, d.Interest)
 
 		if err != nil {
-			fmt.Printf("Ошибка при обработке вклада %d: %v\n", d.ID, err)
+			logger.Log.Error("Ошибка при обработке вклада", zap.Error(err), zap.Int("depositID", d.ID))
 			tx.Rollback()
 		} else {
 			tx.Commit()
+			successCount++
 		}
 	}
 
-	fmt.Printf("Успешно начислено процентов по %d вкладам.\n", len(toUpdate))
+	logger.Log.Info("Процесс начисления завершен", zap.Int("processed", successCount), zap.Int("total", len(toUpdate)))
 }

@@ -1,0 +1,90 @@
+# Конфигурация сервера
+server:
+  port: 8080
+  read_timeout: 15s
+  write_timeout: 15s
+
+# Конфигурация базы данных
+database:
+  host: ${DB_HOST}
+  port: 5432
+  user: ${DB_USER}
+  password: ${DB_PASS}
+  name: ${DB_NAME}
+  ssl_mode: disable
+  max_open_conns: 25
+  max_idle_conns: 5
+
+# Конфигурация сессий
+session:
+  secret_key: ${SESSION_SECRET}
+  max_age: 86400  # 24 часа в секундах
+
+# Конфигурация фоновых задач
+background:
+  interest_accrual_interval: 10m  # Интервал начисления процентов
+
+# Типы вкладов
+deposit_types:
+  - id: 1
+    name: "TIDAL FLEX"
+    description: "Единственный вклад, который подстраивается под вас. Пополняйте и снимайте средства без ограничений."
+    min_amount: 1000
+    interest_rate: 5.5
+    can_deposit: true
+    can_withdraw: true
+    icon: "🌊"
+    badge: "ГИБКИЙ"
+    class: "tidal"
+
+  - id: 2
+    name: "DEEP SAVER"
+    description: "Погрузитесь в мир высокой доходности. Пополняйте счет в любое время."
+    min_amount: 5000
+    interest_rate: 7.0
+    can_deposit: true
+    can_withdraw: false
+    icon: "💎"
+    badge: "НАКОПИТЕЛЬНЫЙ"
+    class: "deep"
+
+  - id: 3
+    name: "CORAL FIX"
+    description: "Незыблемая стабильность и фиксированная прибыль. Идеальный выбор для тех, кто ценит предсказуемость."
+    min_amount: 10000
+    interest_rate: 8.5
+    can_deposit: false
+    can_withdraw: false
+    icon: "🏛️"
+    badge: "СТАБИЛЬНЫЙ"
+    class: "coral"
+
+  - id: 4
+    name: "OCEAN ELITE"
+    description: "Максимальная доходность для избранных. Полная блокировка средств на весь срок."
+    min_amount: 50000
+    interest_rate: 12.0
+    can_deposit: false
+    can_withdraw: false
+    icon: "⚡"
+    badge: "ПРЕМИУМ"
+    class: "ocean"
+
+  - id: 5
+    name: "HARBOUR GOLD"
+    description: "Особые условия для клиентов, которые остаются с нами. Достойная ставка и надежность."
+    min_amount: 25000
+    interest_rate: 9.5
+    can_deposit: true
+    can_withdraw: true
+    icon: "🏠"
+    badge: "ЛОЯЛЬНЫЙ"
+    class: "harbour"
+
+# Путь к файлу с типами вкладов (теперь не нужен, но оставим для совместимости)
+deposit_config_path: ""
+
+# Логирование
+logging:
+  level: info
+  format: text

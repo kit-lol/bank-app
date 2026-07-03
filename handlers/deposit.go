@@ -1,161 +1,81 @@
 package handlers
 
 import (
+	"bank-app/logger"
 	"bank-app/models"
 	"bank-app/repository"
 	"database/sql"
-	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
+
+	"go.uber.org/zap"
 )
 
 func DepositHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 1. Проверяем, что запрос пришел методом POST
 		if r.Method != http.MethodPost {
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
-		// 2. Получаем ID пользователя из куки
-		cookie, err := r.Cookie("session_token")
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-		userID, _ := strconv.Atoi(cookie.Value)
+		userIDStr := r.Header.Get("X-User-ID")
+		userID, _ := strconv.Atoi(userIDStr)
 
-		// 3. Получаем сумму из формы
 		amountStr := r.FormValue("amount")
 		amount, err := strconv.ParseFloat(amountStr, 64)
 		if err != nil || amount <= 0 {
-			// Если сумма введена неверно, просто возвращаем обратно
+			logger.Log.Warn("Некорректная сумма пополнения", zap.String("amount", amountStr))
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
-		// 4. Обновляем баланс пользователя
+		logger.Log.Info("Пополнение баланса", zap.Int("userID", userID), zap.Float64("amount", amount))
+
 		err = repository.UpdateBalance(db, userID, amount)
 		if err != nil {
-			fmt.Printf("Ошибка обновления баланса: %v\n", err) // Смотрите в консоль VS Code!
+			logger.Log.Error("Ошибка обновления баланса", zap.Error(err), zap.Int("userID", userID))
 			http.Error(w, "Ошибка БД", http.StatusInternalServerError)
 			return
 		}
 
-		// 5. Записываем транзакцию в историю
-		// Передаем nil в качестве deposit_id, так как это прямое пополнение счета
 		err = repository.AddTransaction(db, userID, nil, amount, "DEPOSIT")
 		if err != nil {
+			logger.Log.Error("Ошибка записи транзакции", zap.Error(err))
 			http.Error(w, "Ошибка записи истории", http.StatusInternalServerError)
 			return
 		}
 
-		// 6. Успешный редирект
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }
 
-func OpenDepositPageHandler(db *sql.DB) http.HandlerFunc {
+func OpenDepositPageHandler(db *sql.DB, depositTypes []models.DepositTypeExtended) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Получаем только численные данные из БД
-		types, _ := repository.GetDepositTypes(db)
-
-		// Создаем "Мастер-список" с текстами
-		data := []struct {
-			ID   int
-			Name string
-			Desc string
-		}{
-			{1, "TIDAL FLEX", "Единственный вклад, который подстраивается под вас. Пополняйте и снимайте средства без ограничений, сохраняя контроль над своим капиталом. Гибкость без потери статуса."},
-			{2, "DEEP SAVER", "Погрузитесь в мир высокой доходности. Пополняйте счет в любое время и наблюдайте, как ваш капитал растет в спокойных водах океана. Средства надежно зафиксированы до полной готовности."},
-			{3, "CORAL FIX", "Незыблемая стабильность и фиксированная прибыль. Идеальный выбор для тех, кто ценит предсказуемость и уверенность в завтрашнем дне. Ваш капитал под надежной защитой."},
-			{4, "OCEAN ELITE", "Максимальная доходность для избранных. Полная блокировка средств на весь срок — цена, которую вы платите за статус и исключительную прибыль. Только для тех, кто смотрит на горизонт."},
-			{5, "HARBOUR GOLD", "Особые условия для клиентов, которые остаются с нами. Достойная ставка, теплое отношение и надежность, проверенная временем. Ваша спокойная бухта в мире финансов."},
-		}
-
-		// Обновляем структуру данных перед отправкой в шаблон
-		for i := range types {
-			for _, item := range data {
-				if types[i].ID == item.ID {
-					types[i].Name = item.Name
-					types[i].Description = item.Desc
-				}
-			}
-		}
-
-		// ========== ДОБАВЛЕНО: поля для карточек ==========
-		type ExtendedDepositType struct {
-			models.DepositType
-			Class string
-			Icon  string
-			Badge string
-		}
-
-		var extendedTypes []ExtendedDepositType
-		for _, t := range types {
-			ext := ExtendedDepositType{
-				DepositType: t,
-			}
-			switch t.ID {
-			case 1:
-				ext.Class = "tidal"
-				ext.Icon = "🌊"
-				ext.Badge = "ГИБКИЙ"
-			case 2:
-				ext.Class = "deep"
-				ext.Icon = "💎"
-				ext.Badge = "НАКОПИТЕЛЬНЫЙ"
-			case 3:
-				ext.Class = "coral"
-				ext.Icon = "🏛️"
-				ext.Badge = "СТАБИЛЬНЫЙ"
-			case 4:
-				ext.Class = "ocean"
-				ext.Icon = "⚡"
-				ext.Badge = "ПРЕМИУМ"
-			case 5:
-				ext.Class = "harbour"
-				ext.Icon = "🏠"
-				ext.Badge = "ЛОЯЛЬНЫЙ"
-			}
-			extendedTypes = append(extendedTypes, ext)
-		}
-		// ========== КОНЕЦ ДОБАВЛЕННОГО БЛОКА ==========
-
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		tmpl := template.Must(template.ParseFiles("templates/open_deposit.html"))
-		tmpl.Execute(w, extendedTypes) // ← изменено с types на extendedTypes
+		tmpl.Execute(w, depositTypes)
 	}
-}
-
-func GetUserIDFromSession(db *sql.DB, r *http.Request) int {
-	cookie, err := r.Cookie("session_token")
-	if err != nil {
-		return 0
-	}
-
-	// Просто переводим строку из куки обратно в число
-	userID, _ := strconv.Atoi(cookie.Value)
-	return userID
 }
 
 func CreateDepositHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// ИСПРАВЛЕНО: Теперь метод POST проверяется строго
 		if r.Method != http.MethodPost {
 			http.Error(w, "Метод не разрешен", http.StatusMethodNotAllowed)
 			return
 		}
 
-		userID := GetUserIDFromSession(db, r)
-		if userID == 0 {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
+		userIDStr := r.Header.Get("X-User-ID")
+		userID, _ := strconv.Atoi(userIDStr)
 
 		typeID, _ := strconv.Atoi(r.FormValue("type_id"))
 		amount, err := strconv.ParseFloat(r.FormValue("amount"), 64)
+
+		logger.Log.Info("Запрос на открытие вклада",
+			zap.Int("userID", userID),
+			zap.Float64("amount", amount),
+			zap.Int("typeID", typeID))
+
 		if err != nil || amount <= 0 {
 			http.Error(w, "Некорректная сумма", http.StatusBadRequest)
 			return
@@ -163,85 +83,80 @@ func CreateDepositHandler(db *sql.DB) http.HandlerFunc {
 
 		tx, err := db.Begin()
 		if err != nil {
+			logger.Log.Error("Не удалось начать транзакцию", zap.Error(err))
 			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
 			return
 		}
 		defer tx.Rollback()
 
 		var balance float64
-		var currencyID int
 		var minAmount float64
 		var interestRate float64
 
-		// Получаем данные
-		err = tx.QueryRow("SELECT balance, currency_id FROM users WHERE id = $1 FOR UPDATE", userID).Scan(&balance, &currencyID)
+		err = tx.QueryRow("SELECT balance FROM users WHERE id = $1 FOR UPDATE", userID).Scan(&balance)
 		err = tx.QueryRow("SELECT min_amount, interest_rate FROM deposit_types WHERE id = $1", typeID).Scan(&minAmount, &interestRate)
 
 		if err != nil {
-			// Вывод реальной ошибки в консоль для отладки
-			fmt.Println("Ошибка получения данных:", err)
-			http.Error(w, "Тип вклада не найден", http.StatusBadRequest)
+			logger.Log.Error("Ошибка получения данных для вклада", zap.Error(err))
+			http.Error(w, "Ошибка оформления", http.StatusBadRequest)
 			return
 		}
 
-		// ВАЛИДАЦИЯ: Чтобы открывать любые вклады, проверь баланс в БД.
-		// Если пишет "Недостаточно средств", значит amount > balance.
 		if amount < minAmount {
+			logger.Log.Warn("Сумма меньше минимальной", zap.Float64("amount", amount), zap.Float64("min", minAmount))
 			http.Error(w, "Сумма меньше минимальной", http.StatusBadRequest)
 			return
 		}
 		if balance < amount {
+			logger.Log.Warn("Недостаточно средств для вклада", zap.Float64("balance", balance), zap.Float64("amount", amount))
 			http.Error(w, "Недостаточно средств на балансе", http.StatusBadRequest)
 			return
 		}
 
-		// Списание
 		_, err = tx.Exec("UPDATE users SET balance = balance - $1 WHERE id = $2", amount, userID)
-
-		// Вставка (убедись, что currencyID у пользователя не NULL)
-		_, err = tx.Exec(`
-            INSERT INTO deposits (user_id, type_id, amount, interest_rate, currency_id, status, created_at) 
-            VALUES ($1, $2, $3, $4, $5, 'ACTIVE', NOW())`,
-			userID, typeID, amount, interestRate, currencyID)
+		_, err = tx.Exec(`INSERT INTO deposits (user_id, type_id, amount, interest_rate, status, created_at) VALUES ($1, $2, $3, $4, 'ACTIVE', NOW())`,
+			userID, typeID, amount, interestRate)
 
 		if err != nil {
-			fmt.Println("INSERT ERROR:", err) // ПОСМОТРИ ЭТО В КОНСОЛИ!
+			logger.Log.Error("Ошибка создания вклада в БД", zap.Error(err))
 			http.Error(w, "Ошибка оформления", http.StatusInternalServerError)
 			return
 		}
 
 		tx.Commit()
+		logger.Log.Info("Вклад успешно открыт", zap.Int("userID", userID), zap.Float64("newBalance", balance-amount))
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }
 
 func DepositToExistingHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID := GetUserIDFromSession(db, r) // Получаем ID юзера
-		if userID == 0 {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
+		userIDStr := r.Header.Get("X-User-ID")
+		userID, _ := strconv.Atoi(userIDStr)
 
 		depositID := r.FormValue("deposit_id")
 		amount, _ := strconv.ParseFloat(r.FormValue("amount"), 64)
 
+		logger.Log.Info("Пополнение существующего вклада", zap.Int("userID", userID), zap.String("depositID", depositID), zap.Float64("amount", amount))
+
 		tx, _ := db.Begin()
 		defer tx.Rollback()
 
-		// 1. Списание с баланса
 		_, err := tx.Exec("UPDATE users SET balance = balance - $1 WHERE id = $2 AND balance >= $1", amount, userID)
-		if err != nil { /* обработка ошибки */
+		if err != nil {
+			logger.Log.Warn("Недостаточно средств для пополнения вклада", zap.Error(err))
+			http.Error(w, "Недостаточно средств", http.StatusBadRequest)
 			return
 		}
 
-		// 2. Пополнение вклада
 		_, err = tx.Exec("UPDATE deposits SET amount = amount + $1 WHERE id = $2 AND user_id = $3", amount, depositID, userID)
+		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'DEPOSIT_TO_EXISTING', NOW())`, userID, depositID, amount)
 
-		// 3. Запись в историю
-		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) 
-                          VALUES ($1, $2, $3, 'DEPOSIT_TO_EXISTING', NOW())`,
-			userID, depositID, amount)
+		if err != nil {
+			logger.Log.Error("Ошибка при пополнении вклада", zap.Error(err))
+			http.Error(w, "Ошибка операции", http.StatusInternalServerError)
+			return
+		}
 
 		tx.Commit()
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
@@ -250,30 +165,17 @@ func DepositToExistingHandler(db *sql.DB) http.HandlerFunc {
 
 func WithdrawHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("session_token")
-		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-		userID, _ := strconv.Atoi(cookie.Value)
+		userIDStr := r.Header.Get("X-User-ID")
+		userID, _ := strconv.Atoi(userIDStr)
 
-		// 1. Считываем deposit_id из формы
-		depositID, err := strconv.Atoi(r.FormValue("deposit_id"))
-		if err != nil {
-			http.Error(w, "Неверный ID вклада", http.StatusBadRequest)
-			return
-		}
+		depositID, _ := strconv.Atoi(r.FormValue("deposit_id"))
+		amount, _ := strconv.ParseFloat(r.FormValue("amount"), 64)
 
-		// 2. Считываем сумму
-		amount, err := strconv.ParseFloat(r.FormValue("amount"), 64)
-		if err != nil || amount <= 0 {
-			http.Error(w, "Неверная сумма", http.StatusBadRequest)
-			return
-		}
+		logger.Log.Info("Запрос на снятие средств со вклада", zap.Int("userID", userID), zap.Int("depositID", depositID), zap.Float64("amount", amount))
 
-		// 3. ПЕРЕДАЕМ depositID в сервис
-		err = repository.WithdrawFromDeposit(db, userID, strconv.Itoa(depositID), amount)
+		err := repository.WithdrawFromDeposit(db, userID, strconv.Itoa(depositID), amount)
 		if err != nil {
+			logger.Log.Warn("Ошибка снятия средств", zap.Error(err))
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -286,17 +188,60 @@ func CloseDepositHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		depositID := r.FormValue("deposit_id")
 
-		// Выполняем закрытие в БД...
-		_, err := db.Exec("DELETE FROM deposits WHERE id = $1", depositID)
+		// Получаем UserID из сессии (через header, установленный middleware)
+		userIDStr := r.Header.Get("X-User-ID")
+		if userIDStr == "" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		userID, _ := strconv.Atoi(userIDStr)
 
+		logger.Log.Info("Запрос на закрытие вклада", zap.String("depositID", depositID), zap.Int("userID", userID))
+
+		// Начинаем транзакцию, чтобы всё прошло безопасно
+		tx, err := db.Begin()
 		if err != nil {
-			// Если ошибка, возвращаем код 500 и НЕ делаем редирект
-			http.Error(w, "Ошибка удаления вклада", http.StatusInternalServerError)
-			return // ОБЯЗАТЕЛЬНО ВЫХОДИМ
+			logger.Log.Error("Не удалось начать транзакцию при закрытии вклада", zap.Error(err))
+			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
+			return
+		}
+		defer tx.Rollback()
+
+		// 1. Узнаем сумму вклада перед удалением
+		var amount float64
+		err = tx.QueryRow("SELECT amount FROM deposits WHERE id = $1 AND user_id = $2", depositID, userID).Scan(&amount)
+		if err != nil {
+			logger.Log.Error("Вклад не найден или ошибка БД", zap.Error(err))
+			http.Error(w, "Вклад не найден", http.StatusBadRequest)
+			return
 		}
 
-		// Если все хорошо — редирект
-		// Проверяем, откуда пришел запрос (админ или юзер)
+		// 2. Возвращаем деньги на баланс пользователя
+		_, err = tx.Exec("UPDATE users SET balance = balance + $1 WHERE id = $2", amount, userID)
+		if err != nil {
+			logger.Log.Error("Ошибка возврата средств на баланс", zap.Error(err))
+			http.Error(w, "Ошибка возврата средств", http.StatusInternalServerError)
+			return
+		}
+
+		// 3. Записываем операцию в историю транзакций
+		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) 
+                          VALUES ($1, $2, $3, 'CLOSE_DEPOSIT', NOW())`, userID, depositID, amount)
+
+		// 4. Удаляем вклад (или меняем статус на CLOSED, если хочешь хранить историю)
+		_, err = tx.Exec("DELETE FROM deposits WHERE id = $1", depositID)
+
+		if err != nil {
+			logger.Log.Error("Ошибка удаления вклада", zap.Error(err))
+			http.Error(w, "Ошибка удаления вклада", http.StatusInternalServerError)
+			return
+		}
+
+		// Если всё успешно — сохраняем изменения
+		tx.Commit()
+
+		logger.Log.Info("Вклад успешно закрыт, средства возвращены", zap.Float64("amount", amount))
+
 		if r.Header.Get("Referer") != "" {
 			http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 		} else {

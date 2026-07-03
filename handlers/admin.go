@@ -1,34 +1,32 @@
 package handlers
 
 import (
+	"bank-app/logger"
 	"bank-app/models"
 	"bank-app/repository"
 	"bank-app/service"
 	"database/sql"
-	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
+
+	"go.uber.org/zap"
 )
 
 func AdminDashboardHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		users, err := repository.GetAllUser(db)
 		if err != nil {
+			logger.Log.Error("Ошибка получения списка пользователей", zap.Error(err))
 			http.Error(w, "Ошибка: "+err.Error(), 500)
 			return
 		}
-
-		// ОТЛАДКА: Выведем в консоль, что именно мы передаем
-		fmt.Printf("DEBUG: Отправляем в шаблон %d пользователей\n", len(users))
-		for i, u := range users {
-			fmt.Printf("User %d: ID=%d, Name=%s\n", i, u.ID, u.Username)
-		}
+		logger.Log.Info("Админ просмотрел список пользователей", zap.Int("count", len(users)))
 
 		tmpl := template.Must(template.ParseFiles("templates/admin_dashboard.html"))
-		err = tmpl.Execute(w, users) // Передаем слайс []models.User
+		err = tmpl.Execute(w, users)
 		if err != nil {
-			fmt.Println("Ошибка шаблона:", err)
+			logger.Log.Error("Ошибка рендера шаблона админки", zap.Error(err))
 		}
 	}
 }
@@ -39,6 +37,8 @@ func AdminActionHandler(db *sql.DB) http.HandlerFunc {
 		action := r.FormValue("action")
 		amount, _ := strconv.ParseFloat(r.FormValue("amount"), 64)
 		userID, _ := strconv.Atoi(userIDStr)
+
+		logger.Log.Info("Действие администратора", zap.String("action", action), zap.Int("targetUserID", userID), zap.Float64("amount", amount))
 
 		switch action {
 		case "add_funds":
@@ -65,10 +65,9 @@ func AdminUserDetailHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// 1. Получаем все вклады (убрали WHERE status = 'ACTIVE', чтобы увидеть все)
-		rows, err := db.Query("SELECT id, user_id, currency_id, amount, interest_rate, status, created_at FROM deposits WHERE user_id = $1", userID)
+		rows, err := db.Query("SELECT id, user_id, amount, interest_rate, status, created_at FROM deposits WHERE user_id = $1", userID)
 		if err != nil {
-			fmt.Printf("Ошибка при поиске вкладов для пользователя %d: %v\n", userID, err)
+			logger.Log.Error("Ошибка поиска вкладов пользователя", zap.Error(err), zap.Int("userID", userID))
 			http.Error(w, "Ошибка БД", http.StatusInternalServerError)
 			return
 		}
@@ -77,20 +76,15 @@ func AdminUserDetailHandler(db *sql.DB) http.HandlerFunc {
 		var deposits []models.Deposit
 		for rows.Next() {
 			var d models.Deposit
-			err := rows.Scan(&d.ID, &d.UserID, &d.CurrencyID, &d.Amount, &d.InterestRate, &d.Status, &d.CreatedAt)
+			err := rows.Scan(&d.ID, &d.UserID, &d.Amount, &d.InterestRate, &d.Status, &d.CreatedAt)
 			if err != nil {
-				fmt.Printf("Ошибка сканирования вклада: %v\n", err)
 				continue
 			}
 			deposits = append(deposits, d)
 		}
 
-		fmt.Printf("DEBUG: Для пользователя %d найдено %d вкладов\n", userID, len(deposits))
-
-		// 2. Получаем транзакции
 		transactions, _ := repository.GetUserTransactions(db, userID)
 
-		// 3. Формируем данные для шаблона
 		data := struct {
 			UserID       int
 			Deposits     []models.Deposit

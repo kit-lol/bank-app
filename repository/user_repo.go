@@ -32,9 +32,9 @@ func GetUserByUsername(db *sql.DB, username string) (*models.User, error) {
 }
 
 func GetUserByID(db *sql.DB, id int) (*models.User, error) {
-	query := `SELECT id, username, balance, currency_id, role FROM users WHERE id = $1`
+	query := `SELECT id, username, balance, role FROM users WHERE id = $1`
 	var u models.User
-	err := db.QueryRow(query, id).Scan(&u.ID, &u.Username, &u.Balance, &u.CurrencyID, &u.Role)
+	err := db.QueryRow(query, id).Scan(&u.ID, &u.Username, &u.Balance, &u.Role)
 	return &u, err
 }
 

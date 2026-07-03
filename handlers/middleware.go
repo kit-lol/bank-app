@@ -1,32 +1,40 @@
 package handlers
 
 import (
+	"bank-app/sessions"
 	"database/sql"
+	"fmt"
 	"net/http"
-	"strconv"
 )
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("session_token")
-		if err != nil {
+		// Получаем сессию из cookie
+		session, err := sessions.Store.Get(r, "session")
+
+		if err != nil || session.Values["user_id"] == nil {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 
-		_ = cookie
+		// Сохраняем user_id в header для использования в хендлерах
+		r.Header.Set("X-User-ID", fmt.Sprintf("%d", session.Values["user_id"]))
+
 		next(w, r)
 	}
 }
 
 func AdminMiddleware(db *sql.DB, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("session_token")
-		if err != nil {
+		// Сначала проверяем обычную авторизацию
+		session, err := sessions.Store.Get(r, "session")
+
+		if err != nil || session.Values["user_id"] == nil {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
-		userID, _ := strconv.Atoi(cookie.Value)
+
+		userID := session.Values["user_id"].(int)
 
 		var role string
 		err = db.QueryRow("SELECT role FROM users WHERE id = $1", userID).Scan(&role)
@@ -35,6 +43,10 @@ func AdminMiddleware(db *sql.DB, next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "Доступ запрещен", http.StatusForbidden)
 			return
 		}
+
+		// Устанавливаем header для совместимости
+		r.Header.Set("X-User-ID", fmt.Sprintf("%d", userID))
+
 		next(w, r)
 	}
 }

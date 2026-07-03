@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS deposits;
+DROP TABLE IF EXISTS deposit_types;

@@ -10,7 +10,6 @@ type User struct {
 	Username     string  `json:"username"`
 	PasswordHash string  `json:"password_hash"`
 	Balance      float64 `json:"balance"`
-	CurrencyID   int     `json:"currency_id"`
 	Role         string  `json:"role"`
 	IsActive     bool    `json:"is_active"`
 }
@@ -18,10 +17,9 @@ type User struct {
 type Deposit struct {
 	ID           int             `json:"id"`
 	UserID       int             `json:"user_id"`
-	CurrencyID   int             `json:"currency_id"`
 	Amount       float64         `json:"amount"`
 	InterestRate float64         `json:"interest_rate"`
-	Conditions   json.RawMessage `json:"conditions"` // Для работы с JSONB из PostgreSQL
+	Conditions   json.RawMessage `json:"conditions"`
 	Status       string          `json:"status"`
 	CreatedAt    time.Time       `json:"created_at"`
 	LastAccrual  time.Time       `json:"last_accrual"`

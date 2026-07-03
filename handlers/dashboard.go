@@ -13,12 +13,18 @@ import (
 
 func DashboardHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("session_token")
-		if err != nil {
+		// ПОЛУЧАЕМ USER_ID ИЗ HEADER (установлен middleware)
+		userIDStr := r.Header.Get("X-User-ID")
+		if userIDStr == "" {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
-		userID, _ := strconv.Atoi(cookie.Value)
+
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			http.Error(w, "Ошибка авторизации", http.StatusUnauthorized)
+			return
+		}
 
 		user, _ := repository.GetUserByID(db, userID)
 
@@ -29,7 +35,7 @@ func DashboardHandler(db *sql.DB) http.HandlerFunc {
 			}
 		}
 
-		// 3. Получаем активные вклады
+		// Получаем активные вклады
 		rows, err := db.Query(`
 		SELECT d.id, d.type_id, d.amount, d.interest_rate, t.can_deposit, t.can_withdraw 
 		FROM deposits d 
@@ -52,16 +58,13 @@ func DashboardHandler(db *sql.DB) http.HandlerFunc {
 			for rows.Next() {
 				var d DepositView
 				var typeID int
-				// Сканируем вместе с правами из таблицы типов
 				err := rows.Scan(&d.ID, &typeID, &d.Amount, &d.Rate, &d.CanDeposit, &d.CanWithdraw)
 				if err != nil {
 					fmt.Println("Ошибка сканирования вклада:", err)
 					continue
 				}
 
-				// Название берем из utils, чтобы избежать проблем с кодировкой
 				d.TypeName = utils.GetDepositName(typeID)
-
 				deposits = append(deposits, d)
 			}
 		}

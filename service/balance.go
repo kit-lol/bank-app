@@ -12,12 +12,10 @@ func ValidateAndAdjustBalance(db *sql.DB, userID int, amount float64, isAdmin bo
 		return err
 	}
 
-	// Валидация: если это не админ и сумма списания больше баланса
 	if !isAdmin && (currentBalance+amount) < 0 {
-		return fmt.Errorf("недостаточно средств: на счете %.2f, требуется %.2f", currentBalance, -amount)
+		return fmt.Errorf("недостаточно средств")
 	}
 
-	// Выполняем обновление
 	_, err = db.Exec("UPDATE users SET balance = balance + $1 WHERE id = $2", amount, userID)
 	return err
 }
