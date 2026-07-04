@@ -8,5 +8,4 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Индекс помогает искать пользователя по имени быстрее
 CREATE INDEX idx_users_username ON users(username);

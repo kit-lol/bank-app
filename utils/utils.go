@@ -33,7 +33,7 @@ func TranslateOperationType(opType string) string {
 	case "CLOSE_DEPOSIT":
 		return "Закрытие вклада"
 	case "ACCRUAL":
-		return "Начисление процентов" // Добавили это
+		return "Начисление процентов"
 	default:
 		return opType
 	}
@@ -41,7 +41,6 @@ func TranslateOperationType(opType string) string {
 
 // RenderTemplate — универсальная функция для вывода шаблонов
 func RenderTemplate(w http.ResponseWriter, tmplName string, data interface{}) {
-	// Парсим layout и конкретный шаблон страницы
 	tmpl, err := template.ParseFiles("templates/layout.html", "templates/"+tmplName+".html")
 	if err != nil {
 		http.Error(w, "Ошибка загрузки шаблона: "+err.Error(), http.StatusInternalServerError)

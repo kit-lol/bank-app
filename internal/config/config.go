@@ -70,7 +70,6 @@ type LoggingConfig struct {
 
 // LoadConfig загружает конфигурацию из YAML файла
 func LoadConfig(path string) (*Config, error) {
-	// Читаем файл
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка чтения файла конфигурации: %w", err)

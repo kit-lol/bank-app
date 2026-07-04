@@ -9,7 +9,6 @@ import (
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Получаем сессию из cookie
 		session, err := sessions.Store.Get(r, "session")
 
 		if err != nil || session.Values["user_id"] == nil {
@@ -17,7 +16,6 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Сохраняем user_id в header для использования в хендлерах
 		r.Header.Set("X-User-ID", fmt.Sprintf("%d", session.Values["user_id"]))
 
 		next(w, r)
@@ -26,7 +24,6 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 func AdminMiddleware(db *sql.DB, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Сначала проверяем обычную авторизацию
 		session, err := sessions.Store.Get(r, "session")
 
 		if err != nil || session.Values["user_id"] == nil {
@@ -44,7 +41,6 @@ func AdminMiddleware(db *sql.DB, next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Устанавливаем header для совместимости
 		r.Header.Set("X-User-ID", fmt.Sprintf("%d", userID))
 
 		next(w, r)

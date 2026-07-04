@@ -36,17 +36,14 @@ func WithdrawFromDeposit(db *sql.DB, userID int, depositID string, amount float6
 		return fmt.Errorf("недостаточно средств")
 	}
 
-	// 2. Списываем со вклада и возвращаем на баланс юзера
 	_, err = tx.Exec("UPDATE deposits SET amount = amount - $1 WHERE id = $2", amount, depositID)
 	_, err = tx.Exec("UPDATE users SET balance = balance + $1 WHERE id = $2", amount, userID)
 
-	// 3. Логируем
 	_, err = tx.Exec("INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'WITHDRAW', NOW())", userID, depositID, amount)
 
 	return tx.Commit()
 }
 
-// Закрытие вклада (перенос остатка на баланс)
 func CloseDeposit(db *sql.DB, userID int, depositID string) error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -60,7 +57,6 @@ func CloseDeposit(db *sql.DB, userID int, depositID string) error {
 		return err
 	}
 
-	// Переносим деньги и меняем статус
 	_, err = tx.Exec("UPDATE users SET balance = balance + $1 WHERE id = $2", amount, userID)
 	_, err = tx.Exec("UPDATE deposits SET status = 'CLOSED' WHERE id = $1", depositID)
 	_, err = tx.Exec("INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'CLOSE_DEPOSIT', NOW())", userID, depositID, amount)

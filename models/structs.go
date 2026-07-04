@@ -47,15 +47,15 @@ type DepositTypeExtended struct {
 	MinAmount    float64 `json:"min_amount"`
 	CanDeposit   bool    `json:"can_deposit"`
 	CanWithdraw  bool    `json:"can_withdraw"`
-	Class        string  `json:"class"` // Для CSS-класса
-	Icon         string  `json:"icon"`  // Иконка
-	Badge        string  `json:"badge"` // Текст бейджа
+	Class        string  `json:"class"`
+	Icon         string  `json:"icon"`
+	Badge        string  `json:"badge"`
 }
 
 type Transaction struct {
 	ID            int       `json:"id"`
 	UserID        int       `json:"user_id"`
-	DepositID     *int      `json:"deposit_id"` // Указатель, так как может быть NULL
+	DepositID     *int      `json:"deposit_id"`
 	Amount        float64   `json:"amount"`
 	OperationType string    `json:"operation_type"`
 	CreatedAt     time.Time `json:"created_at"`

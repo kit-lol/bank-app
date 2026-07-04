@@ -14,8 +14,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ СООБЩЕНИЙ ---
-
 func setFlash(w http.ResponseWriter, r *http.Request, message string, msgType string) {
 	session, _ := sessions.Store.Get(r, "session")
 	session.AddFlash(map[string]string{"message": message, "type": msgType})
@@ -30,11 +28,9 @@ func getFlashes(w http.ResponseWriter, r *http.Request) []map[string]string {
 			flashes = append(flashes, flash)
 		}
 	}
-	session.Save(r, w) // Очищаем флеш после чтения
+	session.Save(r, w)
 	return flashes
 }
-
-// --- ОСНОВНЫЕ ХЕНДЛЕРЫ ---
 
 func DepositHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

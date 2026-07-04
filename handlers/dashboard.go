@@ -33,7 +33,7 @@ func DashboardHandler(db *sql.DB) http.HandlerFunc {
 				transactions[i].OperationType = utils.TranslateOperationType(transactions[i].OperationType)
 			}
 		} else {
-			transactions = []models.Transaction{} // Чтобы шаблон не падал
+			transactions = []models.Transaction{}
 		}
 
 		rows, err := db.Query(`
@@ -70,7 +70,6 @@ func DashboardHandler(db *sql.DB) http.HandlerFunc {
 			deposits = []DepositView{}
 		}
 
-		// Получаем сообщения
 		flashMessages := getFlashes(w, r)
 
 		data := struct {

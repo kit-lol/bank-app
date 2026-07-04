@@ -19,19 +19,16 @@ func RegisterHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Устанавливаем заголовок JSON для всех ответов этого хендлера
 		w.Header().Set("Content-Type", "application/json")
 
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
-		// Вспомогательная функция для отправки ошибок
 		sendError := func(msg string, code int) {
 			w.WriteHeader(code)
 			json.NewEncoder(w).Encode(map[string]string{"error": msg})
 		}
 
-		// === ВАЛИДАЦИЯ ===
 		if len(username) < 3 || len(username) > 50 {
 			logger.Log.Warn("Ошибка регистрации: некорректный логин", zap.String("username", username))
 			sendError("Логин должен быть от 3 до 50 символов", http.StatusBadRequest)
@@ -44,7 +41,6 @@ func RegisterHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Проверка на наличие букв и цифр
 		hasLetter := false
 		hasNumber := false
 		for _, char := range password {
@@ -60,7 +56,6 @@ func RegisterHandler(db *sql.DB) http.HandlerFunc {
 			sendError("Пароль должен содержать буквы и цифры", http.StatusBadRequest)
 			return
 		}
-		// =================
 
 		logger.Log.Info("Попытка регистрации", zap.String("username", username))
 
@@ -84,7 +79,6 @@ func RegisterHandler(db *sql.DB) http.HandlerFunc {
 
 		logger.Log.Info("Пользователь зарегистрирован и вошел в систему", zap.Int("userID", user.ID))
 
-		// Отправляем успешный ответ с адресом для перехода
 		json.NewEncoder(w).Encode(map[string]string{"redirect": "/dashboard"})
 	}
 }
@@ -96,7 +90,6 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Устанавливаем заголовок ДО отправки тела ответа
 		w.Header().Set("Content-Type", "application/json")
 
 		username := r.FormValue("username")
@@ -126,13 +119,11 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 		session.Values["user_id"] = user.ID
 		session.Save(r, w)
 
-		// Успех
 		redirectURL := "/dashboard"
 		if user.Role == "admin" {
 			redirectURL = "/admin"
 		}
 
-		// Отправляем JSON с редиректом
 		json.NewEncoder(w).Encode(map[string]string{"redirect": redirectURL})
 	}
 }

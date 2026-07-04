@@ -22,7 +22,6 @@ func AdminDashboardHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Подсчитываем статистику в Go
 		activeCount := 0
 		blockedCount := 0
 		for _, u := range users {
@@ -35,7 +34,6 @@ func AdminDashboardHandler(db *sql.DB) http.HandlerFunc {
 
 		logger.Log.Info("Админ просмотрел список пользователей", zap.Int("count", len(users)))
 
-		// Передаем в шаблон структуру с данными
 		data := struct {
 			Users        []models.User
 			Total        int
@@ -90,7 +88,6 @@ func AdminActionHandler(db *sql.DB) http.HandlerFunc {
 			service.ValidateAndAdjustBalance(db, userID, -amount, true)
 
 		case "toggle_status":
-			// Сначала узнаем текущий статус
 			var isActive bool
 			err := db.QueryRow("SELECT is_active FROM users WHERE id = $1", userID).Scan(&isActive)
 			if err != nil {
@@ -98,7 +95,6 @@ func AdminActionHandler(db *sql.DB) http.HandlerFunc {
 				break
 			}
 
-			// Переключаем на противоположный
 			newStatus := !isActive
 			_, err = db.Exec("UPDATE users SET is_active = $1 WHERE id = $2", newStatus, userID)
 			if err != nil {

@@ -11,7 +11,6 @@ var Log *zap.Logger
 func InitLogger() {
 	config := zap.NewDevelopmentConfig()
 
-	// Делаем логи цветными и понятными для человека
 	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 
 	var err error

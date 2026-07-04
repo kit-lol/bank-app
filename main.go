@@ -22,6 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// runMigrations применяет SQL-миграции для создания структуры БД
 func runMigrations(dbURL string) error {
 	m, err := migrate.New("file://migrations", dbURL)
 	if err != nil {
@@ -36,6 +37,7 @@ func runMigrations(dbURL string) error {
 	return nil
 }
 
+// convertDepositTypes преобразует конфиг YAML в модели для использования в handlers
 func convertDepositTypes(types []internal_config.DepositType) []models.DepositTypeExtended {
 	var result []models.DepositTypeExtended
 	for _, t := range types {
@@ -56,19 +58,19 @@ func main() {
 
 	logger.Log.Info("🚀 Запуск приложения Bank App...")
 
-	// 2. Загрузка .env
+	// 2. Загрузка переменных окружения (.env)
 	if err := godotenv.Load(); err != nil {
 		logger.Log.Warn("Файл .env не найден, используем системные переменные")
 	}
 
-	// 3. Загрузка конфига
+	// 3. Загрузка конфигурации из YAML
 	cfg, err := internal_config.LoadConfig("internal/config/config.yaml")
 	if err != nil {
 		logger.Log.Fatal("Ошибка загрузки конфигурации", zap.Error(err))
 	}
 	logger.Log.Info("✅ Конфигурация загружена успешно")
 
-	// 4. Миграции
+	// 4. Применение миграций базы данных
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		cfg.Database.User, cfg.Database.Password, cfg.Database.Host,
 		cfg.Database.Port, cfg.Database.Name, cfg.Database.SSLMode)
@@ -79,22 +81,23 @@ func main() {
 	}
 	logger.Log.Info("✅ База данных готова к работе")
 
-	// 5. Данные вкладов
+	// 5. Подготовка данных о типах вкладов из конфига
 	depositTypes := convertDepositTypes(cfg.DepositTypes)
 	logger.Log.Info("📊 Типы вкладов загружены", zap.Int("count", len(depositTypes)))
 
-	// 6. Сессии
+	// 6. Инициализация хранилища сессий (Cookie Store)
 	os.Setenv("SESSION_SECRET", cfg.Session.SecretKey)
 	sessions.InitSession()
 	logger.Log.Info("🔐 Сессии инициализированы")
 
-	// 7. Подключение к БД
+	// 7. Подключение к PostgreSQL
 	db, err := sql.Open("postgres", cfg.GetDSN())
 	if err != nil {
 		logger.Log.Fatal("Ошибка подключения к БД", zap.Error(err))
 	}
 	defer db.Close()
 
+	// Настройка пула соединений
 	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
 	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
 
@@ -103,7 +106,7 @@ func main() {
 	}
 	logger.Log.Info("✅ Соединение с БД установлено")
 
-	// 8. Фоновая задача
+	// 8. Запуск фоновой задачи для начисления процентов по вкладам
 	go func() {
 		ticker := time.NewTicker(cfg.Background.InterestAccrualInterval)
 		defer ticker.Stop()
@@ -113,7 +116,7 @@ func main() {
 		}
 	}()
 
-	// 9. Маршрутизация через ServeMux (для поддержки 404)
+	// 9. Настройка маршрутизации через ServeMux
 	mux := http.NewServeMux()
 
 	// Главная страница
@@ -121,18 +124,13 @@ func main() {
 		if r.URL.Path == "/" {
 			http.ServeFile(w, r, "templates/index.html")
 		} else {
-			// Если путь не найден среди зарегистрированных ниже, mux сам вернет 404,
-			// но мы можем перехватить это, если нужно. Пока оставим стандартное поведение Go.
 			http.NotFound(w, r)
 		}
 	})
 
-	// Создаем файловый сервер
+	// Раздача статических файлов с принудительными MIME-типами
 	fs := http.FileServer(http.Dir("./static"))
-
-	// Оборачиваем его, чтобы принудительно ставить правильные MIME-типы
 	mux.Handle("/static/", http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Принудительно ставим заголовки для CSS и JS
 		if strings.HasSuffix(r.URL.Path, ".css") {
 			w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		} else if strings.HasSuffix(r.URL.Path, ".js") {
@@ -141,12 +139,12 @@ func main() {
 		fs.ServeHTTP(w, r)
 	})))
 
-	// Аутентификация
+	// Маршруты аутентификации
 	mux.HandleFunc("/login", handlers.LoginHandler(db))
 	mux.HandleFunc("/register", handlers.RegisterHandler(db))
 	mux.HandleFunc("/logout", handlers.LogoutHandler)
 
-	// Пользовательские маршруты
+	// Защищенные маршруты пользователей
 	mux.HandleFunc("/dashboard", handlers.AuthMiddleware(handlers.DashboardHandler(db)))
 	mux.HandleFunc("/deposit", handlers.AuthMiddleware(handlers.DepositHandler(db)))
 	mux.HandleFunc("/open-deposit", handlers.AuthMiddleware(handlers.OpenDepositPageHandler(db, depositTypes)))
@@ -155,20 +153,20 @@ func main() {
 	mux.HandleFunc("/withdraw-from-deposit", handlers.AuthMiddleware(handlers.WithdrawHandler(db)))
 	mux.HandleFunc("/close-deposit", handlers.AuthMiddleware(handlers.CloseDepositHandler(db)))
 
-	// Админские маршруты
+	// Защищенные маршруты администратора
 	mux.HandleFunc("/admin", handlers.AdminMiddleware(db, handlers.AdminDashboardHandler(db)))
 	mux.HandleFunc("/admin/action", handlers.AdminMiddleware(db, handlers.AdminActionHandler(db)))
 	mux.HandleFunc("/admin/user", handlers.AdminMiddleware(db, handlers.AdminUserDetailHandler(db)))
 	mux.HandleFunc("/admin/close-deposit", handlers.AdminMiddleware(db, handlers.CloseDepositHandler(db)))
 
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
-	logger.Log.Info("🌍 Сервер слушает порт http://localhost:8080/admin", zap.String("address", addr))
+	logger.Log.Info("🌍 Сервер слушает порт", zap.String("address", addr))
 
 	server := &http.Server{
 		Addr:         addr,
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
-		Handler:      mux, // Передаем наш мультиплексор в сервер
+		Handler:      mux,
 	}
 
 	logger.Log.Fatal("Ошибка сервера", zap.Error(server.ListenAndServe()))
