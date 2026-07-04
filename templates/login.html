@@ -31,15 +31,75 @@
         <div class="glass-card auth-form-box">
             <h2>Вход в систему</h2>
             <p class="auth-subtitle">Используйте данные своей учетной записи.</p>
-            <form action="/login" method="POST" class="auth-form">
+            
+            <form id="loginForm" class="auth-form">
                 <input type="text" name="username" placeholder="Логин" required>
                 <input type="password" name="password" placeholder="Пароль" required>
                 <button type="submit" class="btn btn-primary">Войти</button>
             </form>
+            
             <div class="auth-footer">Нет аккаунта? <a href="/register">Зарегистрироваться</a></div>
         </div>
     </div>
 </section>
+
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
 <script src="/static/js/script.js"></script>
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const btn = this.querySelector('button');
+        const originalText = btn.innerText;
+        
+        btn.innerText = 'Входим...';
+        btn.disabled = true;
+
+        try {
+            console.log("Отправка запроса на /login...");
+            
+            const response = await fetch('/login', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include' // Важно для кук!
+            });
+
+            console.log("Статус ответа:", response.status);
+            console.log("Заголовки:", response.headers.get('content-type'));
+
+            // Проверяем, является ли ответ JSON
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new TypeError("Сервер вернул не JSON! Проверь логи Go.");
+            }
+
+            const data = await response.json();
+            console.log("Данные от сервера:", data);
+            
+            if (response.ok) {
+                if (data.redirect) {
+                    showToast('Успешно! Заходим...', 'success');
+                    window.location.href = data.redirect;
+                } else {
+                    showToast('Ошибка: нет адреса для перехода', 'error');
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            } else {
+                showToast(data.error || 'Ошибка входа', 'error');
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+
+        } catch (err) {
+            console.error("Ошибка JS:", err);
+            showToast('Произошла ошибка при обработке ответа', 'error');
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    });
+</script>
 </body>
 </html>

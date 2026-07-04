@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -51,7 +52,7 @@ func convertDepositTypes(types []internal_config.DepositType) []models.DepositTy
 func main() {
 	// 1. Инициализация логгера
 	logger.InitLogger()
-	defer logger.Log.Sync() // Сброс буфера при завершении
+	defer logger.Log.Sync()
 
 	logger.Log.Info("🚀 Запуск приложения Bank App...")
 
@@ -112,33 +113,63 @@ func main() {
 		}
 	}()
 
-	// 9. Маршруты
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "templates/index.html")
+	// 9. Маршрутизация через ServeMux (для поддержки 404)
+	mux := http.NewServeMux()
+
+	// Главная страница
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.ServeFile(w, r, "templates/index.html")
+		} else {
+			// Если путь не найден среди зарегистрированных ниже, mux сам вернет 404,
+			// но мы можем перехватить это, если нужно. Пока оставим стандартное поведение Go.
+			http.NotFound(w, r)
+		}
 	})
+
+	// Создаем файловый сервер
 	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	http.HandleFunc("/login", handlers.LoginHandler(db))
-	http.HandleFunc("/register", handlers.RegisterHandler(db))
-	http.HandleFunc("/logout", handlers.LogoutHandler)
+	// Оборачиваем его, чтобы принудительно ставить правильные MIME-типы
+	mux.Handle("/static/", http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Принудительно ставим заголовки для CSS и JS
+		if strings.HasSuffix(r.URL.Path, ".css") {
+			w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		} else if strings.HasSuffix(r.URL.Path, ".js") {
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+		}
+		fs.ServeHTTP(w, r)
+	})))
 
-	http.HandleFunc("/dashboard", handlers.AuthMiddleware(handlers.DashboardHandler(db)))
-	http.HandleFunc("/deposit", handlers.AuthMiddleware(handlers.DepositHandler(db)))
-	http.HandleFunc("/open-deposit", handlers.AuthMiddleware(handlers.OpenDepositPageHandler(db, depositTypes)))
-	http.HandleFunc("/create-deposit", handlers.AuthMiddleware(handlers.CreateDepositHandler(db)))
-	http.HandleFunc("/deposit-to-existing", handlers.AuthMiddleware(handlers.DepositToExistingHandler(db)))
-	http.HandleFunc("/withdraw-from-deposit", handlers.AuthMiddleware(handlers.WithdrawHandler(db)))
-	http.HandleFunc("/close-deposit", handlers.AuthMiddleware(handlers.CloseDepositHandler(db)))
+	// Аутентификация
+	mux.HandleFunc("/login", handlers.LoginHandler(db))
+	mux.HandleFunc("/register", handlers.RegisterHandler(db))
+	mux.HandleFunc("/logout", handlers.LogoutHandler)
 
-	http.HandleFunc("/admin", handlers.AdminMiddleware(db, handlers.AdminDashboardHandler(db)))
-	http.HandleFunc("/admin/action", handlers.AdminMiddleware(db, handlers.AdminActionHandler(db)))
-	http.HandleFunc("/admin/user", handlers.AdminMiddleware(db, handlers.AdminUserDetailHandler(db)))
-	http.HandleFunc("/admin/close-deposit", handlers.AdminMiddleware(db, handlers.CloseDepositHandler(db)))
+	// Пользовательские маршруты
+	mux.HandleFunc("/dashboard", handlers.AuthMiddleware(handlers.DashboardHandler(db)))
+	mux.HandleFunc("/deposit", handlers.AuthMiddleware(handlers.DepositHandler(db)))
+	mux.HandleFunc("/open-deposit", handlers.AuthMiddleware(handlers.OpenDepositPageHandler(db, depositTypes)))
+	mux.HandleFunc("/create-deposit", handlers.AuthMiddleware(handlers.CreateDepositHandler(db)))
+	mux.HandleFunc("/deposit-to-existing", handlers.AuthMiddleware(handlers.DepositToExistingHandler(db)))
+	mux.HandleFunc("/withdraw-from-deposit", handlers.AuthMiddleware(handlers.WithdrawHandler(db)))
+	mux.HandleFunc("/close-deposit", handlers.AuthMiddleware(handlers.CloseDepositHandler(db)))
+
+	// Админские маршруты
+	mux.HandleFunc("/admin", handlers.AdminMiddleware(db, handlers.AdminDashboardHandler(db)))
+	mux.HandleFunc("/admin/action", handlers.AdminMiddleware(db, handlers.AdminActionHandler(db)))
+	mux.HandleFunc("/admin/user", handlers.AdminMiddleware(db, handlers.AdminUserDetailHandler(db)))
+	mux.HandleFunc("/admin/close-deposit", handlers.AdminMiddleware(db, handlers.CloseDepositHandler(db)))
 
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
-	logger.Log.Info("🌍 Сервер слушает порт", zap.String("address", addr))
+	logger.Log.Info("🌍 Сервер слушает порт http://localhost:8080/admin", zap.String("address", addr))
 
-	server := &http.Server{Addr: addr, ReadTimeout: cfg.Server.ReadTimeout, WriteTimeout: cfg.Server.WriteTimeout}
+	server := &http.Server{
+		Addr:         addr,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		Handler:      mux, // Передаем наш мультиплексор в сервер
+	}
+
 	logger.Log.Fatal("Ошибка сервера", zap.Error(server.ListenAndServe()))
 }

@@ -5,6 +5,7 @@ import (
 	"bank-app/repository"
 	"bank-app/sessions"
 	"database/sql"
+	"encoding/json"
 	"net/http"
 
 	"go.uber.org/zap"
@@ -18,28 +19,62 @@ func RegisterHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		// Устанавливаем заголовок JSON для всех ответов этого хендлера
+		w.Header().Set("Content-Type", "application/json")
+
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
-		logger.Log.Info("Попытка регистрации", zap.String("username", username))
+		// Вспомогательная функция для отправки ошибок
+		sendError := func(msg string, code int) {
+			w.WriteHeader(code)
+			json.NewEncoder(w).Encode(map[string]string{"error": msg})
+		}
 
-		if len(password) < 8 {
-			logger.Log.Warn("Регистрация отклонена: короткий пароль", zap.String("username", username))
-			http.Error(w, "Пароль слишком короткий (минимум 8 символов)", http.StatusBadRequest)
+		// === ВАЛИДАЦИЯ ===
+		if len(username) < 3 || len(username) > 50 {
+			logger.Log.Warn("Ошибка регистрации: некорректный логин", zap.String("username", username))
+			sendError("Логин должен быть от 3 до 50 символов", http.StatusBadRequest)
 			return
 		}
+
+		if len(password) < 8 {
+			logger.Log.Warn("Ошибка регистрации: короткий пароль")
+			sendError("Пароль должен содержать минимум 8 символов", http.StatusBadRequest)
+			return
+		}
+
+		// Проверка на наличие букв и цифр
+		hasLetter := false
+		hasNumber := false
+		for _, char := range password {
+			if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') {
+				hasLetter = true
+			}
+			if char >= '0' && char <= '9' {
+				hasNumber = true
+			}
+		}
+
+		if !hasLetter || !hasNumber {
+			sendError("Пароль должен содержать буквы и цифры", http.StatusBadRequest)
+			return
+		}
+		// =================
+
+		logger.Log.Info("Попытка регистрации", zap.String("username", username))
 
 		err := repository.RegisterUser(db, username, password)
 		if err != nil {
 			logger.Log.Error("Ошибка БД при регистрации", zap.Error(err), zap.String("username", username))
-			http.Error(w, "Ошибка при регистрации", http.StatusInternalServerError)
+			sendError("Этот логин уже занят или произошла ошибка БД", http.StatusInternalServerError)
 			return
 		}
 
 		user, err := repository.GetUserByUsername(db, username)
 		if err != nil {
 			logger.Log.Error("Ошибка получения пользователя после регистрации", zap.Error(err))
-			http.Error(w, "Ошибка при входе после регистрации", http.StatusInternalServerError)
+			sendError("Ошибка при создании сессии", http.StatusInternalServerError)
 			return
 		}
 
@@ -48,7 +83,9 @@ func RegisterHandler(db *sql.DB) http.HandlerFunc {
 		session.Save(r, w)
 
 		logger.Log.Info("Пользователь зарегистрирован и вошел в систему", zap.Int("userID", user.ID))
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+
+		// Отправляем успешный ответ с адресом для перехода
+		json.NewEncoder(w).Encode(map[string]string{"redirect": "/dashboard"})
 	}
 }
 
@@ -59,36 +96,44 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		// Устанавливаем заголовок ДО отправки тела ответа
+		w.Header().Set("Content-Type", "application/json")
+
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
 		user, err := repository.GetUserByUsername(db, username)
 		if err != nil {
-			logger.Log.Warn("Неудачная попытка входа: пользователь не найден", zap.String("username", username))
-			http.Error(w, "Неверный логин или пароль", http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Неверный логин или пароль"})
+			return
+		}
+
+		if !user.IsActive {
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Аккаунт заблокирован"})
 			return
 		}
 
 		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 		if err != nil {
-			logger.Log.Warn("Неудачная попытка входа: неверный пароль", zap.String("username", username))
-			http.Error(w, "Неверный логин или пароль", http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Неверный пароль"})
 			return
 		}
 
-		// Создаем сессию
 		session, _ := sessions.Store.Get(r, "session")
 		session.Values["user_id"] = user.ID
 		session.Save(r, w)
 
-		logger.Log.Info("Успешный вход в систему", zap.Int("userID", user.ID), zap.String("username", username), zap.String("role", user.Role))
-
-		// === НОВОЕ: Перенаправление в зависимости от роли ===
+		// Успех
+		redirectURL := "/dashboard"
 		if user.Role == "admin" {
-			http.Redirect(w, r, "/admin", http.StatusSeeOther)
-		} else {
-			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			redirectURL = "/admin"
 		}
+
+		// Отправляем JSON с редиректом
+		json.NewEncoder(w).Encode(map[string]string{"redirect": redirectURL})
 	}
 }
 

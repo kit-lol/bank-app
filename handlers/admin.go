@@ -21,10 +21,35 @@ func AdminDashboardHandler(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "Ошибка: "+err.Error(), 500)
 			return
 		}
+
+		// Подсчитываем статистику в Go
+		activeCount := 0
+		blockedCount := 0
+		for _, u := range users {
+			if u.IsActive {
+				activeCount++
+			} else {
+				blockedCount++
+			}
+		}
+
 		logger.Log.Info("Админ просмотрел список пользователей", zap.Int("count", len(users)))
 
+		// Передаем в шаблон структуру с данными
+		data := struct {
+			Users        []models.User
+			Total        int
+			ActiveCount  int
+			BlockedCount int
+		}{
+			Users:        users,
+			Total:        len(users),
+			ActiveCount:  activeCount,
+			BlockedCount: blockedCount,
+		}
+
 		tmpl := template.Must(template.ParseFiles("templates/admin_dashboard.html"))
-		err = tmpl.Execute(w, users)
+		err = tmpl.Execute(w, data)
 		if err != nil {
 			logger.Log.Error("Ошибка рендера шаблона админки", zap.Error(err))
 		}
@@ -36,17 +61,52 @@ func AdminActionHandler(db *sql.DB) http.HandlerFunc {
 		userIDStr := r.FormValue("user_id")
 		action := r.FormValue("action")
 		amount, _ := strconv.ParseFloat(r.FormValue("amount"), 64)
-		userID, _ := strconv.Atoi(userIDStr)
+		userID, err := strconv.Atoi(userIDStr)
 
-		logger.Log.Info("Действие администратора", zap.String("action", action), zap.Int("targetUserID", userID), zap.Float64("amount", amount))
+		if err != nil {
+			logger.Log.Error("Некорректный ID пользователя в действии админа", zap.String("userIDStr", userIDStr))
+			http.Redirect(w, r, "/admin", http.StatusSeeOther)
+			return
+		}
+
+		logger.Log.Info("Действие администратора",
+			zap.String("action", action),
+			zap.Int("targetUserID", userID),
+			zap.Float64("amount", amount))
 
 		switch action {
 		case "add_funds":
+			if amount <= 0 {
+				http.Redirect(w, r, "/admin", http.StatusSeeOther)
+				return
+			}
 			service.ValidateAndAdjustBalance(db, userID, amount, true)
+
 		case "withdraw_funds":
+			if amount <= 0 {
+				http.Redirect(w, r, "/admin", http.StatusSeeOther)
+				return
+			}
 			service.ValidateAndAdjustBalance(db, userID, -amount, true)
+
 		case "toggle_status":
-			db.Exec("UPDATE users SET is_active = NOT is_active WHERE id = $1", userID)
+			// Сначала узнаем текущий статус
+			var isActive bool
+			err := db.QueryRow("SELECT is_active FROM users WHERE id = $1", userID).Scan(&isActive)
+			if err != nil {
+				logger.Log.Error("Ошибка получения статуса пользователя", zap.Error(err))
+				break
+			}
+
+			// Переключаем на противоположный
+			newStatus := !isActive
+			_, err = db.Exec("UPDATE users SET is_active = $1 WHERE id = $2", newStatus, userID)
+			if err != nil {
+				logger.Log.Error("Ошибка обновления статуса", zap.Error(err))
+			} else {
+				logger.Log.Info("Статус пользователя изменен", zap.Int("userID", userID), zap.Bool("newStatus", newStatus))
+			}
+
 		case "view_user":
 			http.Redirect(w, r, "/admin/user?id="+userIDStr, http.StatusSeeOther)
 			return

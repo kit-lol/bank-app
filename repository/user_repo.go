@@ -20,11 +20,13 @@ func RegisterUser(db *sql.DB, username, password string) error {
 }
 
 func GetUserByUsername(db *sql.DB, username string) (*models.User, error) {
-	query := `SELECT id, username, password_hash, role FROM users WHERE username = $1`
+	// ВАЖНО: is_active должен быть в SELECT
+	query := `SELECT id, username, password_hash, role, is_active FROM users WHERE username = $1`
 	row := db.QueryRow(query, username)
 
 	var u models.User
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role)
+	// ВАЖНО: isActive должен быть в Scan последним
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.IsActive)
 	if err != nil {
 		return nil, err
 	}

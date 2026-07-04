@@ -13,7 +13,6 @@ import (
 
 func DashboardHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// ПОЛУЧАЕМ USER_ID ИЗ HEADER (установлен middleware)
 		userIDStr := r.Header.Get("X-User-ID")
 		if userIDStr == "" {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -33,9 +32,10 @@ func DashboardHandler(db *sql.DB) http.HandlerFunc {
 			for i := range transactions {
 				transactions[i].OperationType = utils.TranslateOperationType(transactions[i].OperationType)
 			}
+		} else {
+			transactions = []models.Transaction{} // Чтобы шаблон не падал
 		}
 
-		// Получаем активные вклады
 		rows, err := db.Query(`
 		SELECT d.id, d.type_id, d.amount, d.interest_rate, t.can_deposit, t.can_withdraw 
 		FROM deposits d 
@@ -63,17 +63,27 @@ func DashboardHandler(db *sql.DB) http.HandlerFunc {
 					fmt.Println("Ошибка сканирования вклада:", err)
 					continue
 				}
-
 				d.TypeName = utils.GetDepositName(typeID)
 				deposits = append(deposits, d)
 			}
+		} else {
+			deposits = []DepositView{}
 		}
+
+		// Получаем сообщения
+		flashMessages := getFlashes(w, r)
 
 		data := struct {
 			User         *models.User
 			Transactions []models.Transaction
 			Deposits     []DepositView
-		}{user, transactions, deposits}
+			Flashes      []map[string]string
+		}{
+			User:         user,
+			Transactions: transactions,
+			Deposits:     deposits,
+			Flashes:      flashMessages,
+		}
 
 		tmpl := template.Must(template.ParseFiles("templates/dashboard.html"))
 		tmpl.Execute(w, data)

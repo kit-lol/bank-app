@@ -4,13 +4,37 @@ import (
 	"bank-app/logger"
 	"bank-app/models"
 	"bank-app/repository"
+	"bank-app/sessions"
 	"database/sql"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
 
 	"go.uber.org/zap"
 )
+
+// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ СООБЩЕНИЙ ---
+
+func setFlash(w http.ResponseWriter, r *http.Request, message string, msgType string) {
+	session, _ := sessions.Store.Get(r, "session")
+	session.AddFlash(map[string]string{"message": message, "type": msgType})
+	session.Save(r, w)
+}
+
+func getFlashes(w http.ResponseWriter, r *http.Request) []map[string]string {
+	session, _ := sessions.Store.Get(r, "session")
+	var flashes []map[string]string
+	for _, f := range session.Flashes() {
+		if flash, ok := f.(map[string]string); ok {
+			flashes = append(flashes, flash)
+		}
+	}
+	session.Save(r, w) // Очищаем флеш после чтения
+	return flashes
+}
+
+// --- ОСНОВНЫЕ ХЕНДЛЕРЫ ---
 
 func DepositHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +49,7 @@ func DepositHandler(db *sql.DB) http.HandlerFunc {
 		amountStr := r.FormValue("amount")
 		amount, err := strconv.ParseFloat(amountStr, 64)
 		if err != nil || amount <= 0 {
-			logger.Log.Warn("Некорректная сумма пополнения", zap.String("amount", amountStr))
+			setFlash(w, r, "Некорректная сумма пополнения", "error")
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
@@ -34,18 +58,18 @@ func DepositHandler(db *sql.DB) http.HandlerFunc {
 
 		err = repository.UpdateBalance(db, userID, amount)
 		if err != nil {
-			logger.Log.Error("Ошибка обновления баланса", zap.Error(err), zap.Int("userID", userID))
-			http.Error(w, "Ошибка БД", http.StatusInternalServerError)
+			logger.Log.Error("Ошибка обновления баланса", zap.Error(err))
+			setFlash(w, r, "Ошибка при пополнении баланса", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
 		err = repository.AddTransaction(db, userID, nil, amount, "DEPOSIT")
 		if err != nil {
 			logger.Log.Error("Ошибка записи транзакции", zap.Error(err))
-			http.Error(w, "Ошибка записи истории", http.StatusInternalServerError)
-			return
 		}
 
+		setFlash(w, r, fmt.Sprintf("Баланс успешно пополнен на %.2f ₽", amount), "success")
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }
@@ -71,20 +95,22 @@ func CreateDepositHandler(db *sql.DB) http.HandlerFunc {
 		typeID, _ := strconv.Atoi(r.FormValue("type_id"))
 		amount, err := strconv.ParseFloat(r.FormValue("amount"), 64)
 
-		logger.Log.Info("Запрос на открытие вклада",
-			zap.Int("userID", userID),
-			zap.Float64("amount", amount),
-			zap.Int("typeID", typeID))
-
 		if err != nil || amount <= 0 {
-			http.Error(w, "Некорректная сумма", http.StatusBadRequest)
+			setFlash(w, r, "Некорректная сумма вклада", "error")
+			http.Redirect(w, r, "/open-deposit", http.StatusSeeOther)
+			return
+		}
+
+		if amount > 10000000 {
+			setFlash(w, r, "Сумма вклада превышает лимит (10 млн)", "error")
+			http.Redirect(w, r, "/open-deposit", http.StatusSeeOther)
 			return
 		}
 
 		tx, err := db.Begin()
 		if err != nil {
-			logger.Log.Error("Не удалось начать транзакцию", zap.Error(err))
-			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
+			setFlash(w, r, "Ошибка сервера при создании вклада", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 		defer tx.Rollback()
@@ -94,22 +120,27 @@ func CreateDepositHandler(db *sql.DB) http.HandlerFunc {
 		var interestRate float64
 
 		err = tx.QueryRow("SELECT balance FROM users WHERE id = $1 FOR UPDATE", userID).Scan(&balance)
-		err = tx.QueryRow("SELECT min_amount, interest_rate FROM deposit_types WHERE id = $1", typeID).Scan(&minAmount, &interestRate)
-
 		if err != nil {
-			logger.Log.Error("Ошибка получения данных для вклада", zap.Error(err))
-			http.Error(w, "Ошибка оформления", http.StatusBadRequest)
+			setFlash(w, r, "Ошибка получения данных пользователя", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+
+		err = tx.QueryRow("SELECT min_amount, interest_rate FROM deposit_types WHERE id = $1", typeID).Scan(&minAmount, &interestRate)
+		if err != nil {
+			setFlash(w, r, "Ошибка данных о типе вклада", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
 		if amount < minAmount {
-			logger.Log.Warn("Сумма меньше минимальной", zap.Float64("amount", amount), zap.Float64("min", minAmount))
-			http.Error(w, "Сумма меньше минимальной", http.StatusBadRequest)
+			setFlash(w, r, fmt.Sprintf("Минимальная сумма для этого вклада: %.2f ₽", minAmount), "error")
+			http.Redirect(w, r, "/open-deposit", http.StatusSeeOther)
 			return
 		}
 		if balance < amount {
-			logger.Log.Warn("Недостаточно средств для вклада", zap.Float64("balance", balance), zap.Float64("amount", amount))
-			http.Error(w, "Недостаточно средств на балансе", http.StatusBadRequest)
+			setFlash(w, r, "Недостаточно средств на балансе", "error")
+			http.Redirect(w, r, "/open-deposit", http.StatusSeeOther)
 			return
 		}
 
@@ -118,13 +149,13 @@ func CreateDepositHandler(db *sql.DB) http.HandlerFunc {
 			userID, typeID, amount, interestRate)
 
 		if err != nil {
-			logger.Log.Error("Ошибка создания вклада в БД", zap.Error(err))
-			http.Error(w, "Ошибка оформления", http.StatusInternalServerError)
+			setFlash(w, r, "Ошибка создания вклада в БД", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
 		tx.Commit()
-		logger.Log.Info("Вклад успешно открыт", zap.Int("userID", userID), zap.Float64("newBalance", balance-amount))
+		setFlash(w, r, "Вклад успешно открыт!", "success")
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }
@@ -137,28 +168,27 @@ func DepositToExistingHandler(db *sql.DB) http.HandlerFunc {
 		depositID := r.FormValue("deposit_id")
 		amount, _ := strconv.ParseFloat(r.FormValue("amount"), 64)
 
-		logger.Log.Info("Пополнение существующего вклада", zap.Int("userID", userID), zap.String("depositID", depositID), zap.Float64("amount", amount))
-
 		tx, _ := db.Begin()
 		defer tx.Rollback()
 
 		_, err := tx.Exec("UPDATE users SET balance = balance - $1 WHERE id = $2 AND balance >= $1", amount, userID)
 		if err != nil {
-			logger.Log.Warn("Недостаточно средств для пополнения вклада", zap.Error(err))
-			http.Error(w, "Недостаточно средств", http.StatusBadRequest)
+			setFlash(w, r, "Недостаточно средств на балансе для пополнения", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
 		_, err = tx.Exec("UPDATE deposits SET amount = amount + $1 WHERE id = $2 AND user_id = $3", amount, depositID, userID)
-		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'DEPOSIT_TO_EXISTING', NOW())`, userID, depositID, amount)
-
 		if err != nil {
-			logger.Log.Error("Ошибка при пополнении вклада", zap.Error(err))
-			http.Error(w, "Ошибка операции", http.StatusInternalServerError)
+			setFlash(w, r, "Ошибка пополнения вклада", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
+		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'DEPOSIT_TO_EXISTING', NOW())`, userID, depositID, amount)
+
 		tx.Commit()
+		setFlash(w, r, fmt.Sprintf("Вклад успешно пополнен на %.2f ₽", amount), "success")
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }
@@ -171,13 +201,11 @@ func WithdrawHandler(db *sql.DB) http.HandlerFunc {
 		depositID, _ := strconv.Atoi(r.FormValue("deposit_id"))
 		amount, _ := strconv.ParseFloat(r.FormValue("amount"), 64)
 
-		logger.Log.Info("Запрос на снятие средств со вклада", zap.Int("userID", userID), zap.Int("depositID", depositID), zap.Float64("amount", amount))
-
 		err := repository.WithdrawFromDeposit(db, userID, strconv.Itoa(depositID), amount)
 		if err != nil {
-			logger.Log.Warn("Ошибка снятия средств", zap.Error(err))
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			setFlash(w, r, err.Error(), "error")
+		} else {
+			setFlash(w, r, fmt.Sprintf("Со вклада успешно снято %.2f ₽", amount), "success")
 		}
 
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
@@ -187,8 +215,6 @@ func WithdrawHandler(db *sql.DB) http.HandlerFunc {
 func CloseDepositHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		depositID := r.FormValue("deposit_id")
-
-		// Получаем UserID из сессии (через header, установленный middleware)
 		userIDStr := r.Header.Get("X-User-ID")
 		if userIDStr == "" {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -196,56 +222,42 @@ func CloseDepositHandler(db *sql.DB) http.HandlerFunc {
 		}
 		userID, _ := strconv.Atoi(userIDStr)
 
-		logger.Log.Info("Запрос на закрытие вклада", zap.String("depositID", depositID), zap.Int("userID", userID))
-
-		// Начинаем транзакцию, чтобы всё прошло безопасно
 		tx, err := db.Begin()
 		if err != nil {
-			logger.Log.Error("Не удалось начать транзакцию при закрытии вклада", zap.Error(err))
-			http.Error(w, "Ошибка сервера", http.StatusInternalServerError)
+			setFlash(w, r, "Ошибка сервера", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 		defer tx.Rollback()
 
-		// 1. Узнаем сумму вклада перед удалением
 		var amount float64
 		err = tx.QueryRow("SELECT amount FROM deposits WHERE id = $1 AND user_id = $2", depositID, userID).Scan(&amount)
 		if err != nil {
-			logger.Log.Error("Вклад не найден или ошибка БД", zap.Error(err))
-			http.Error(w, "Вклад не найден", http.StatusBadRequest)
+			setFlash(w, r, "Вклад не найден", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
-		// 2. Возвращаем деньги на баланс пользователя
 		_, err = tx.Exec("UPDATE users SET balance = balance + $1 WHERE id = $2", amount, userID)
 		if err != nil {
-			logger.Log.Error("Ошибка возврата средств на баланс", zap.Error(err))
-			http.Error(w, "Ошибка возврата средств", http.StatusInternalServerError)
+			setFlash(w, r, "Ошибка возврата средств", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
-		// 3. Записываем операцию в историю транзакций
 		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) 
                           VALUES ($1, $2, $3, 'CLOSE_DEPOSIT', NOW())`, userID, depositID, amount)
 
-		// 4. Удаляем вклад (или меняем статус на CLOSED, если хочешь хранить историю)
 		_, err = tx.Exec("DELETE FROM deposits WHERE id = $1", depositID)
 
 		if err != nil {
-			logger.Log.Error("Ошибка удаления вклада", zap.Error(err))
-			http.Error(w, "Ошибка удаления вклада", http.StatusInternalServerError)
+			setFlash(w, r, "Ошибка удаления вклада", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
-		// Если всё успешно — сохраняем изменения
 		tx.Commit()
-
-		logger.Log.Info("Вклад успешно закрыт, средства возвращены", zap.Float64("amount", amount))
-
-		if r.Header.Get("Referer") != "" {
-			http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
-		} else {
-			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
-		}
+		setFlash(w, r, "Вклад закрыт, средства возвращены на баланс", "success")
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }

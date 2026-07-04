@@ -124,7 +124,7 @@ nav {
     color: white;
 }
 
-/* Buttons */
+/* Buttons Global */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -782,178 +782,87 @@ footer {
 }
 
 @keyframes borderGlow {
-    0% {
-        background-position: 0% 50%;
-    }
-    100% {
-        background-position: 100% 50%;
-    }
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
 }
 
-/* ===========================
-   CARD COLORS
-=========================== */
-
+/* CARD COLORS */
 .deposit-card.tidal {
     background: rgba(17,48,108,.28);
     border-color: rgba(84,143,255,.4);
     color: #66a6ff;
 }
-.deposit-card.tidal::before {
-    background: radial-gradient(circle at 50% 50%, rgba(84,143,255,.12), transparent 70%);
-}
-.deposit-card.tidal:hover {
-    border-color: rgba(84,143,255,.7);
-    box-shadow: 0 0 60px rgba(84,143,255,.08), 0 20px 60px rgba(0,0,0,.4);
-}
+.deposit-card.tidal::before { background: radial-gradient(circle at 50% 50%, rgba(84,143,255,.12), transparent 70%); }
+.deposit-card.tidal:hover { border-color: rgba(84,143,255,.7); box-shadow: 0 0 60px rgba(84,143,255,.08), 0 20px 60px rgba(0,0,0,.4); }
 
 .deposit-card.deep {
     background: rgba(10,71,90,.28);
     border-color: rgba(50,230,214,.4);
     color: #5ffff2;
 }
-.deposit-card.deep::before {
-    background: radial-gradient(circle at 50% 50%, rgba(50,230,214,.12), transparent 70%);
-}
-.deposit-card.deep:hover {
-    border-color: rgba(50,230,214,.7);
-    box-shadow: 0 0 60px rgba(50,230,214,.08), 0 20px 60px rgba(0,0,0,.4);
-}
+.deposit-card.deep::before { background: radial-gradient(circle at 50% 50%, rgba(50,230,214,.12), transparent 70%); }
+.deposit-card.deep:hover { border-color: rgba(50,230,214,.7); box-shadow: 0 0 60px rgba(50,230,214,.08), 0 20px 60px rgba(0,0,0,.4); }
 
 .deposit-card.coral {
     background: rgba(67,36,47,.28);
     border-color: rgba(255,126,94,.4);
     color: #ff8d70;
 }
-.deposit-card.coral::before {
-    background: radial-gradient(circle at 50% 50%, rgba(255,126,94,.12), transparent 70%);
-}
-.deposit-card.coral:hover {
-    border-color: rgba(255,126,94,.7);
-    box-shadow: 0 0 60px rgba(255,126,94,.08), 0 20px 60px rgba(0,0,0,.4);
-}
+.deposit-card.coral::before { background: radial-gradient(circle at 50% 50%, rgba(255,126,94,.12), transparent 70%); }
+.deposit-card.coral:hover { border-color: rgba(255,126,94,.7); box-shadow: 0 0 60px rgba(255,126,94,.08), 0 20px 60px rgba(0,0,0,.4); }
 
 .deposit-card.elite {
     background: rgba(55,37,83,.28);
     border-color: rgba(190,123,255,.4);
     color: #d2a8ff;
 }
-.deposit-card.elite::before {
-    background: radial-gradient(circle at 50% 50%, rgba(190,123,255,.12), transparent 70%);
-}
-.deposit-card.elite:hover {
-    border-color: rgba(190,123,255,.7);
-    box-shadow: 0 0 60px rgba(190,123,255,.08), 0 20px 60px rgba(0,0,0,.4);
-}
+.deposit-card.elite::before { background: radial-gradient(circle at 50% 50%, rgba(190,123,255,.12), transparent 70%); }
+.deposit-card.elite:hover { border-color: rgba(190,123,255,.7); box-shadow: 0 0 60px rgba(190,123,255,.08), 0 20px 60px rgba(0,0,0,.4); }
 
 .deposit-card.gold {
     background: rgba(69,58,27,.28);
     border-color: rgba(255,207,86,.4);
     color: #ffd75a;
 }
-.deposit-card.gold::before {
-    background: radial-gradient(circle at 50% 50%, rgba(255,207,86,.12), transparent 70%);
-}
-.deposit-card.gold:hover {
-    border-color: rgba(255,207,86,.7);
-    box-shadow: 0 0 60px rgba(255,207,86,.08), 0 20px 60px rgba(0,0,0,.4);
-}
+.deposit-card.gold::before { background: radial-gradient(circle at 50% 50%, rgba(255,207,86,.12), transparent 70%); }
+.deposit-card.gold:hover { border-color: rgba(255,207,86,.7); box-shadow: 0 0 60px rgba(255,207,86,.08), 0 20px 60px rgba(0,0,0,.4); }
 
-/* ===========================
-   CARD HEADER
-=========================== */
-
-.deposit-header {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-}
+/* CARD HEADER */
+.deposit-header { display: flex; align-items: center; gap: 18px; }
 
 .deposit-circle {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 34px;
-    background: rgba(255,255,255,.05);
-    border: 1.5px solid rgba(255,255,255,.15);
-    transition: all .4s;
-    position: relative;
+    width: 72px; height: 72px; border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 34px; background: rgba(255,255,255,.05);
+    border: 1.5px solid rgba(255,255,255,.15); transition: all .4s; position: relative;
 }
-
-/* Glow border for icon */
 .deposit-circle::after {
-    content: '';
-    position: absolute;
-    inset: -3px;
-    border-radius: 50%;
-    padding: 2px;
+    content: ''; position: absolute; inset: -3px; border-radius: 50%; padding: 2px;
     background: linear-gradient(135deg, transparent 30%, currentColor 50%, transparent 70%);
     background-size: 300% 300%;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0;
-    transition: opacity .5s;
-    pointer-events: none;
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: 0; transition: opacity .5s; pointer-events: none;
 }
+.deposit-card:hover .deposit-circle::after { opacity: 1; animation: borderGlow 2.5s ease-in-out infinite alternate; }
+.deposit-card:hover .deposit-circle { transform: scale(1.05) rotate(-5deg); border-color: currentColor; }
 
-.deposit-card:hover .deposit-circle::after {
-    opacity: 1;
-    animation: borderGlow 2.5s ease-in-out infinite alternate;
-}
-
-.deposit-card:hover .deposit-circle {
-    transform: scale(1.05) rotate(-5deg);
-    border-color: currentColor;
-}
-
-.deposit-header h3 {
-    margin: 0;
-    font-size: 30px;
-    font-weight: 700;
-    letter-spacing: -.4px;
-}
+.deposit-header h3 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -.4px; }
 
 .deposit-pill {
-    display: inline-flex;
-    margin-top: 8px;
-    padding: 7px 15px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #fff;
-    transition: all .4s;
-    position: relative;
+    display: inline-flex; margin-top: 8px; padding: 7px 15px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; color: #fff; transition: all .4s; position: relative;
 }
-
-/* Glow border for pill */
 .deposit-pill::after {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: 999px;
-    padding: 2px;
+    content: ''; position: absolute; inset: -2px; border-radius: 999px; padding: 2px;
     background: linear-gradient(135deg, transparent 30%, currentColor 50%, transparent 70%);
     background-size: 300% 300%;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0;
-    transition: opacity .5s;
-    pointer-events: none;
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: 0; transition: opacity .5s; pointer-events: none;
 }
-
-.deposit-card:hover .deposit-pill::after {
-    opacity: 1;
-    animation: borderGlow 2.5s ease-in-out infinite alternate;
-}
-
-.deposit-card:hover .deposit-pill {
-    transform: scale(1.05);
-}
+.deposit-card:hover .deposit-pill::after { opacity: 1; animation: borderGlow 2.5s ease-in-out infinite alternate; }
+.deposit-card:hover .deposit-pill { transform: scale(1.05); }
 
 .deposit-card.tidal .deposit-pill { background: #2b68da; }
 .deposit-card.deep .deposit-pill { background: #119697; }
@@ -961,38 +870,11 @@ footer {
 .deposit-card.elite .deposit-pill { background: #7b4ae4; }
 .deposit-card.gold .deposit-pill { background: #987725; }
 
-/* ===========================
-   RATE
-=========================== */
-
-.deposit-rate {
-    margin: 36px 0;
-    text-align: center;
-    background: none;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-}
-
-.deposit-rate span {
-    font-size: 14px;
-    color: #c0c8d8;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.deposit-rate h2 {
-    margin: 8px 0;
-    font-size: 66px;
-    line-height: 1;
-    font-weight: 900;
-    letter-spacing: -2px;
-    transition: all .4s;
-}
-
-.deposit-card:hover .deposit-rate h2 {
-    transform: scale(1.03);
-}
+/* RATE */
+.deposit-rate { margin: 36px 0; text-align: center; background: none; border: none; box-shadow: none; padding: 0; }
+.deposit-rate span { font-size: 14px; color: #c0c8d8; text-transform: uppercase; letter-spacing: 1px; }
+.deposit-rate h2 { margin: 8px 0; font-size: 66px; line-height: 1; font-weight: 900; letter-spacing: -2px; transition: all .4s; }
+.deposit-card:hover .deposit-rate h2 { transform: scale(1.03); }
 
 .deposit-card.tidal .deposit-rate h2 { color: #62a8ff; }
 .deposit-card.deep .deposit-rate h2 { color: #63fff4; }
@@ -1000,564 +882,283 @@ footer {
 .deposit-card.elite .deposit-rate h2 { color: #d3a5ff; }
 .deposit-card.gold .deposit-rate h2 { color: #ffd65b; }
 
-.deposit-rate p {
-    margin: 0;
-    color: #c8d0df;
-}
+.deposit-rate p { margin: 0; color: #c8d0df; }
+
+/* DEPOSIT TABLE */
+.deposit-table { margin-top: 6px; border-top: 1px solid rgba(255,255,255,.08); }
+.deposit-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,.08); transition: all .3s; }
+.deposit-card:hover .deposit-row { border-bottom-color: rgba(255,255,255,.15); }
+.deposit-row span { color: #d4dae8; font-size: 15px; }
+.deposit-row b { color: #fff; font-weight: 700; }
+
+/* DESCRIPTION */
+.deposit-description { margin-top: auto; padding-top: 24px; color: #c0c8d8; line-height: 1.7; font-size: 14px; border-top: 1px solid rgba(255,255,255,.05); transition: all .4s; }
+.deposit-card:hover .deposit-description { border-top-color: rgba(255,255,255,.12); }
+
+/* AUTH */
+.auth-page { min-height: calc(100vh - 90px); display: flex; align-items: center; justify-content: center; padding: 80px 20px; }
+.auth-wrapper { width: min(1200px, 95%); display: grid; grid-template-columns: 1fr 470px; gap: 50px; align-items: center; }
+.auth-info { padding: 55px; }
+.auth-info h1 { font-size: 54px; line-height: 1.1; margin: 25px 0; }
+.auth-info > p { color: var(--gray); font-size: 18px; line-height: 1.8; margin-bottom: 45px; }
+.auth-benefits { display: flex; flex-direction: column; gap: 30px; }
+.auth-benefits strong { display: block; font-size: 19px; margin-bottom: 8px; }
+.auth-benefits p { color: var(--gray); line-height: 1.7; }
+.auth-form-box { padding: 45px; }
+.auth-form-box h2 { text-align: center; font-size: 34px; margin-bottom: 10px; }
+.auth-subtitle { color: var(--gray); text-align: center; margin-bottom: 35px; }
+.auth-form { display: flex; flex-direction: column; gap: 18px; }
+.auth-form input { background: #0d1420; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; color: white; padding: 17px; font-size: 15px; transition: .3s; }
+.auth-form input:focus { outline: none; border-color: var(--yellow); box-shadow: 0 0 20px rgba(255,215,0,.18); }
+.auth-form button { width: 100%; margin-top: 12px; }
+.auth-footer { text-align: center; margin-top: 28px; color: var(--gray); }
+.auth-footer a { color: var(--yellow); font-weight: 600; }
+.auth-footer a:hover { text-decoration: underline; }
+
+/* DASHBOARD */
+.dashboard { width: min(1400px, 95%); margin: 50px auto; }
+.dashboard-top { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 35px; }
+.dashboard-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 30px; backdrop-filter: blur(15px); transition: .3s; }
+.dashboard-card:hover { transform: translateY(-5px); }
+.dashboard-card span { color: var(--gray); display: block; margin-bottom: 10px; }
+.dashboard-card h2 { color: var(--yellow); font-size: 38px; }
+
+.card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 35px; margin-bottom: 35px; backdrop-filter: blur(15px); }
+.card h3 { margin-bottom: 25px; font-size: 28px; }
+.card h1 { margin-bottom: 15px; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+thead { background: #111827; }
+th { color: var(--yellow); padding: 18px; text-align: left; }
+td { padding: 18px; border-bottom: 1px solid rgba(255,255,255,.08); }
+tbody tr { transition: .25s; }
+tbody tr:hover { background: rgba(255,255,255,.03); }
+
+.deposit-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.deposit-actions form { display: flex; gap: 8px; align-items: center; }
+.input-sea { width: 120px; padding: 10px; border-radius: 10px; background: #111827; border: 1px solid rgba(255,255,255,.08); color: white; }
+.input-sea:focus { border-color: var(--yellow); outline: none; }
+
+.balance { color: var(--yellow); font-size: 44px; font-weight: 700; }
+.operation-positive { color: #49d26b; }
+.operation-negative { color: #ff6b6b; }
 
 /* ===========================
-   DEPOSIT TABLE
+   ADMIN PANEL STYLING
 =========================== */
 
-.deposit-table {
-    margin-top: 6px;
-    border-top: 1px solid rgba(255,255,255,.08);
-}
+.admin-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 40px; }
+.admin-stat { background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 18px; padding: 30px; text-align: center; transition: var(--transition); }
+.admin-stat:hover { transform: translateY(-5px); border-color: rgba(255,215,0,.35); }
+.admin-stat h2 { color: var(--yellow); font-size: 44px; margin-bottom: 10px; }
+.admin-stat p { color: var(--gray); }
 
-.deposit-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 0;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    transition: all .3s;
-}
+.admin-table-wrap { overflow-x: auto; }
+.admin-table-wrap table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+.admin-table-wrap thead { background: #111827; }
+.admin-table-wrap th { color: var(--yellow); padding: 18px; text-align: left; font-weight: 600; letter-spacing: 0.5px; }
+.admin-table-wrap td { padding: 18px; border-bottom: 1px solid rgba(255,255,255,.08); vertical-align: middle; }
+.admin-table-wrap tbody tr { transition: .25s; }
+.admin-table-wrap tbody tr:hover { background: rgba(255,255,255,.03); }
 
-.deposit-card:hover .deposit-row {
-    border-bottom-color: rgba(255,255,255,.15);
-}
+/* Admin Buttons & Inputs */
+.balance-form { display: flex; gap: 6px; align-items: center; }
 
-.deposit-row span {
-    color: #d4dae8;
-    font-size: 15px;
-}
-
-.deposit-row b {
-    color: #fff;
-    font-weight: 700;
-}
-
-/* ===========================
-   DESCRIPTION
-=========================== */
-
-.deposit-description {
-    margin-top: auto;
-    padding-top: 24px;
-    color: #c0c8d8;
-    line-height: 1.7;
-    font-size: 14px;
-    border-top: 1px solid rgba(255,255,255,.05);
-    transition: all .4s;
-}
-
-.deposit-card:hover .deposit-description {
-    border-top-color: rgba(255,255,255,.12);
-}
-
-/* ===========================
-   AUTH
-=========================== */
-
-.auth-page {
-    min-height: calc(100vh - 90px);
-    display: flex;
+/* Сброс стилей для кнопок в таблице */
+.admin-table-wrap button, 
+.admin-table-wrap a.action-btn {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    text-decoration: none;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 80px 20px;
-}
-
-.auth-wrapper {
-    width: min(1200px, 95%);
-    display: grid;
-    grid-template-columns: 1fr 470px;
-    gap: 50px;
-    align-items: center;
-}
-
-.auth-info {
-    padding: 55px;
-}
-
-.auth-info h1 {
-    font-size: 54px;
-    line-height: 1.1;
-    margin: 25px 0;
-}
-
-.auth-info > p {
-    color: var(--gray);
-    font-size: 18px;
-    line-height: 1.8;
-    margin-bottom: 45px;
-}
-
-.auth-benefits {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-}
-
-.auth-benefits strong {
-    display: block;
-    font-size: 19px;
-    margin-bottom: 8px;
-}
-
-.auth-benefits p {
-    color: var(--gray);
-    line-height: 1.7;
-}
-
-.auth-form-box {
-    padding: 45px;
-}
-
-.auth-form-box h2 {
-    text-align: center;
-    font-size: 34px;
-    margin-bottom: 10px;
-}
-
-.auth-subtitle {
-    color: var(--gray);
-    text-align: center;
-    margin-bottom: 35px;
-}
-
-.auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-.auth-form input {
-    background: #0d1420;
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 12px;
-    color: white;
-    padding: 17px;
-    font-size: 15px;
-    transition: .3s;
-}
-
-.auth-form input:focus {
-    outline: none;
-    border-color: var(--yellow);
-    box-shadow: 0 0 20px rgba(255,215,0,.18);
-}
-
-.auth-form button {
-    width: 100%;
-    margin-top: 12px;
-}
-
-.auth-footer {
-    text-align: center;
-    margin-top: 28px;
-    color: var(--gray);
-}
-
-.auth-footer a {
-    color: var(--yellow);
-    font-weight: 600;
-}
-
-.auth-footer a:hover {
-    text-decoration: underline;
-}
-
-/* ===========================
-   DASHBOARD
-=========================== */
-
-.dashboard {
-    width: min(1400px, 95%);
-    margin: 50px auto;
-}
-
-.dashboard-top {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 25px;
-    margin-bottom: 35px;
-}
-
-.dashboard-card {
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 20px;
-    padding: 30px;
-    backdrop-filter: blur(15px);
-    transition: .3s;
-}
-
-.dashboard-card:hover {
-    transform: translateY(-5px);
-}
-
-.dashboard-card span {
-    color: var(--gray);
-    display: block;
-    margin-bottom: 10px;
-}
-
-.dashboard-card h2 {
-    color: var(--yellow);
-    font-size: 38px;
-}
-
-.card {
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 20px;
-    padding: 35px;
-    margin-bottom: 35px;
-    backdrop-filter: blur(15px);
-}
-
-.card h3 {
-    margin-bottom: 25px;
-    font-size: 28px;
-}
-
-.card h1 {
-    margin-bottom: 15px;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 25px;
-}
-
-thead {
-    background: #111827;
-}
-
-th {
-    color: var(--yellow);
-    padding: 18px;
-    text-align: left;
-}
-
-td {
-    padding: 18px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-}
-
-tbody tr {
-    transition: .25s;
-}
-
-tbody tr:hover {
-    background: rgba(255,255,255,.03);
-}
-
-.deposit-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.deposit-actions form {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.input-sea {
-    width: 120px;
-    padding: 10px;
-    border-radius: 10px;
-    background: #111827;
-    border: 1px solid rgba(255,255,255,.08);
-    color: white;
-}
-
-.input-sea:focus {
-    border-color: var(--yellow);
-    outline: none;
-}
-
-.balance {
-    color: var(--yellow);
-    font-size: 44px;
-    font-weight: 700;
-}
-
-.operation-positive {
-    color: #49d26b;
-}
-
-.operation-negative {
-    color: #ff6b6b;
-}
-
-/* ===========================
-   ADMIN
-=========================== */
-
-.admin-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
-    margin-bottom: 40px;
-}
-
-.admin-stat {
-    background: rgba(255,255,255,.04);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 30px;
-    text-align: center;
-    transition: var(--transition);
-}
-
-.admin-stat:hover {
-    transform: translateY(-5px);
-    border-color: rgba(255,215,0,.35);
-}
-
-.admin-stat h2 {
-    color: var(--yellow);
-    font-size: 44px;
-    margin-bottom: 10px;
-}
-
-.admin-stat p {
-    color: var(--gray);
-}
-
-.admin-table-wrap {
-    overflow-x: auto;
-}
-
-.admin-table-wrap table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 25px;
-}
-
-.admin-table-wrap thead {
-    background: #111827;
-}
-
-.admin-table-wrap th {
-    color: var(--yellow);
-    padding: 18px;
-    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-weight: 600;
     letter-spacing: 0.5px;
-}
-
-.admin-table-wrap td {
-    padding: 18px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    vertical-align: middle;
-}
-
-.admin-table-wrap tbody tr {
-    transition: .25s;
-}
-
-.admin-table-wrap tbody tr:hover {
-    background: rgba(255,255,255,.03);
-}
-
-.admin-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-}
-
-.admin-actions form {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-
-.admin-actions .input-small {
-    width: 80px;
-    padding: 8px 10px;
     border-radius: 8px;
-    background: #111827;
-    border: 1px solid rgba(255,255,255,.08);
-    color: white;
+    padding: 8px 14px;
     font-size: 13px;
+    margin: 2px;
+    color: white !important;
 }
 
-.admin-actions .input-small:focus {
+/* Блокировка (Красный градиент) */
+button.btn-block, 
+.admin-table-wrap form button[value="toggle_status"] {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+button.btn-block:hover, 
+.admin-table-wrap form button[value="toggle_status"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    filter: brightness(1.1);
+}
+
+/* Разблокировка (Зеленый градиент) */
+button.btn-unblock {
+    background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+}
+button.btn-unblock:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+    filter: brightness(1.1);
+}
+
+/* Детали (Синий градиент) */
+a.btn-view, 
+.admin-table-wrap a[href*="/admin/user"] {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+a.btn-view:hover, 
+.admin-table-wrap a[href*="/admin/user"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    filter: brightness(1.1);
+}
+
+/* Кнопки +/- баланса */
+.balance-form button {
+    width: 32px; height: 32px; padding: 0; border-radius: 6px; font-size: 16px; font-weight: bold;
+}
+.balance-form button[value="add_funds"] {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+.balance-form button[value="withdraw_funds"] {
+    background: linear-gradient(135deg, #f43f5e, #be123c);
+    box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
+}
+.balance-form button:hover { transform: scale(1.15); filter: brightness(1.2); }
+
+/* Поле ввода суммы */
+.balance-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    width: 80px;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    transition: 0.3s;
+}
+.balance-input:focus {
     border-color: var(--yellow);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.15);
     outline: none;
 }
 
-.btn-small {
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 13px;
-    transition: .3s;
-    cursor: pointer;
-    border: none;
-    color: white;
-    white-space: nowrap;
-}
-
-.btn-small-add {
-    background: #22c55e;
-}
-.btn-small-add:hover {
-    background: #16a34a;
-    transform: scale(1.05);
-}
-
-.btn-small-sub {
-    background: #ef4444;
-}
-.btn-small-sub:hover {
-    background: #dc2626;
-    transform: scale(1.05);
-}
-
-.btn-small-toggle {
-    background: #f59e0b;
-}
-.btn-small-toggle:hover {
-    background: #d97706;
-    transform: scale(1.05);
-}
-
-.btn-small-view {
-    background: #3b82f6;
-}
-.btn-small-view:hover {
-    background: #2563eb;
-    transform: scale(1.05);
-}
-
-.btn-small-danger {
-    background: #dc2626;
-}
-.btn-small-danger:hover {
-    background: #b91c1c;
-    transform: scale(1.05);
-}
-
-/* Statuses */
-.status-active {
-    color: #22c55e;
-    font-weight: 600;
-}
-.status-blocked {
-    color: #ef4444;
-    font-weight: 600;
-}
-.status-pending {
-    color: #f59e0b;
-    font-weight: 600;
-}
-.status-closed {
-    color: #6b7280;
-    font-weight: 600;
-}
+/* Statuses Text */
+.status-active { color: #22c55e; font-weight: 600; }
+.status-blocked { color: #ef4444; font-weight: 600; }
 
 /* ===========================
    MEDIA QUERIES
 =========================== */
 
 @media (max-width: 1100px) {
-    .hero {
-        grid-template-columns: 1fr;
-        text-align: center;
-    }
-    .hero-right {
-        order: -1;
-    }
-    .stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .features,
-    .products-grid,
-    .steps-grid,
-    .reviews-grid {
-        grid-template-columns: 1fr;
-    }
-    .footer-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    .auth-wrapper {
-        grid-template-columns: 1fr;
-    }
-    .auth-info {
-        text-align: center;
-    }
-    .auth-info h1 {
-        font-size: 40px;
-    }
-    .dashboard-top {
-        grid-template-columns: 1fr;
-    }
-    .admin-stats-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    .admin-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .admin-actions form {
-        flex-wrap: wrap;
-    }
+    .hero { grid-template-columns: 1fr; text-align: center; }
+    .hero-right { order: -1; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .features, .products-grid, .steps-grid, .reviews-grid { grid-template-columns: 1fr; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .auth-wrapper { grid-template-columns: 1fr; }
+    .auth-info { text-align: center; }
+    .auth-info h1 { font-size: 40px; }
+    .dashboard-top { grid-template-columns: 1fr; }
+    .admin-stats-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 768px) {
-    header {
-        padding: 20px;
-    }
-    .hero h1 {
-        font-size: 42px;
-    }
-    .section-title h2 {
-        font-size: 34px;
-    }
-    .cta h2 {
-        font-size: 36px;
-    }
-    .btn-group {
-        flex-direction: column;
-    }
-    .stats {
-        grid-template-columns: 1fr;
-    }
-    .footer-grid {
-        grid-template-columns: 1fr;
-        text-align: center;
-    }
-    .admin-stats-grid {
-        grid-template-columns: 1fr;
-    }
-    .admin-table-wrap th,
-    .admin-table-wrap td {
-        padding: 10px;
-        font-size: 13px;
-    }
-    .admin-actions .input-small {
-        width: 100%;
-    }
-    .btn-small {
-        width: 100%;
-        text-align: center;
-    }
-    .deposit-card .deposit-rate h2 {
-        font-size: 48px;
-    }
-    .deposit-grid {
-        grid-template-columns: 1fr;
-    }
+    header { padding: 20px; }
+    .hero h1 { font-size: 42px; }
+    .section-title h2 { font-size: 34px; }
+    .cta h2 { font-size: 36px; }
+    .btn-group { flex-direction: column; }
+    .stats { grid-template-columns: 1fr; }
+    .footer-grid { grid-template-columns: 1fr; text-align: center; }
+    .admin-stats-grid { grid-template-columns: 1fr; }
+    .admin-table-wrap th, .admin-table-wrap td { padding: 10px; font-size: 13px; }
+    .deposit-card .deposit-rate h2 { font-size: 48px; }
+    .deposit-grid { grid-template-columns: 1fr; }
 }
 
 .deposit-card:hover {
     transform: translateY(-12px) scale(1.02);
     box-shadow: inset 0 1px rgba(255,255,255,.08), 0 28px 60px rgba(0,0,0,.40);
 }
+
+/* Принудительно красим кнопку закрытия вклада в красный градиент */
+button.btn-small-danger,
+.admin-table-wrap button.btn-small-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25) !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+button.btn-small-danger:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4) !important;
+    filter: brightness(1.1) !important;
+}
+
+/* На всякий случай, если класс btn-small меняет размер или отступы */
+button.btn-small {
+    padding: 8px 14px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+}
+
+/* ===========================
+   TOAST NOTIFICATIONS
+=========================== */
+.toast {
+    background: rgba(17, 24, 39, 0.95);
+    backdrop-filter: blur(10px);
+    border-left: 4px solid var(--accent);
+    color: white;
+    padding: 16px 24px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    font-size: 14px;
+    font-weight: 500;
+    min-width: 300px;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: slideIn 0.3s ease-out forwards;
+    position: relative;
+}
+
+.toast.error { border-left-color: #ef4444; }
+.toast.success { border-left-color: #22c55e; }
+.toast.warning { border-left-color: #f59e0b; }
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 18px;
+    margin-left: 10px;
+}
+.toast-close:hover { color: white; }
