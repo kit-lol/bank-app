@@ -18,7 +18,7 @@ func AdminDashboardHandler(db *sql.DB) http.HandlerFunc {
 		users, err := repository.GetAllUser(db)
 		if err != nil {
 			logger.Log.Error("Ошибка получения списка пользователей", zap.Error(err))
-			http.Error(w, "Ошибка: "+err.Error(), 500)
+			http.Error(w, "Внутренняя ошибка сервера", 500)
 			return
 		}
 
@@ -56,6 +56,10 @@ func AdminDashboardHandler(db *sql.DB) http.HandlerFunc {
 
 func AdminActionHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Redirect(w, r, "/admin", http.StatusSeeOther)
+			return
+		}
 		userIDStr := r.FormValue("user_id")
 		action := r.FormValue("action")
 		amount, _ := strconv.ParseFloat(r.FormValue("amount"), 64)

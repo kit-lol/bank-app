@@ -37,9 +37,19 @@ func WithdrawFromDeposit(db *sql.DB, userID int, depositID string, amount float6
 	}
 
 	_, err = tx.Exec("UPDATE deposits SET amount = amount - $1 WHERE id = $2", amount, depositID)
+	if err != nil {
+		return fmt.Errorf("ошибка обновления вклада: %w", err)
+	}
+
 	_, err = tx.Exec("UPDATE users SET balance = balance + $1 WHERE id = $2", amount, userID)
+	if err != nil {
+		return fmt.Errorf("ошибка обновления баланса: %w", err)
+	}
 
 	_, err = tx.Exec("INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'WITHDRAW', NOW())", userID, depositID, amount)
+	if err != nil {
+		return fmt.Errorf("ошибка записи транзакции: %w", err)
+	}
 
 	return tx.Commit()
 }
@@ -58,8 +68,19 @@ func CloseDeposit(db *sql.DB, userID int, depositID string) error {
 	}
 
 	_, err = tx.Exec("UPDATE users SET balance = balance + $1 WHERE id = $2", amount, userID)
+	if err != nil {
+		return fmt.Errorf("ошибка обновления баланса: %w", err)
+	}
+
 	_, err = tx.Exec("UPDATE deposits SET status = 'CLOSED' WHERE id = $1", depositID)
+	if err != nil {
+		return fmt.Errorf("ошибка закрытия вклада: %w", err)
+	}
+
 	_, err = tx.Exec("INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'CLOSE_DEPOSIT', NOW())", userID, depositID, amount)
+	if err != nil {
+		return fmt.Errorf("ошибка записи транзакции: %w", err)
+	}
 
 	return tx.Commit()
 }

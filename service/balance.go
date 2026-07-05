@@ -6,8 +6,14 @@ import (
 )
 
 func ValidateAndAdjustBalance(db *sql.DB, userID int, amount float64, isAdmin bool) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("ошибка начала транзакции: %w", err)
+	}
+	defer tx.Rollback()
+
 	var currentBalance float64
-	err := db.QueryRow("SELECT balance FROM users WHERE id = $1", userID).Scan(&currentBalance)
+	err = tx.QueryRow("SELECT balance FROM users WHERE id = $1 FOR UPDATE", userID).Scan(&currentBalance)
 	if err != nil {
 		return err
 	}
@@ -16,6 +22,10 @@ func ValidateAndAdjustBalance(db *sql.DB, userID int, amount float64, isAdmin bo
 		return fmt.Errorf("недостаточно средств")
 	}
 
-	_, err = db.Exec("UPDATE users SET balance = balance + $1 WHERE id = $2", amount, userID)
-	return err
+	_, err = tx.Exec("UPDATE users SET balance = balance + $1 WHERE id = $2", amount, userID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }

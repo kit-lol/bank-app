@@ -141,16 +141,25 @@ func CreateDepositHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		_, err = tx.Exec("UPDATE users SET balance = balance - $1 WHERE id = $2", amount, userID)
+		if err != nil {
+			setFlash(w, r, "Ошибка списания средств", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+
 		_, err = tx.Exec(`INSERT INTO deposits (user_id, type_id, amount, interest_rate, status, created_at) VALUES ($1, $2, $3, $4, 'ACTIVE', NOW())`,
 			userID, typeID, amount, interestRate)
-
 		if err != nil {
 			setFlash(w, r, "Ошибка создания вклада в БД", "error")
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
-		tx.Commit()
+		if err = tx.Commit(); err != nil {
+			setFlash(w, r, "Ошибка сохранения вклада", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
 		setFlash(w, r, "Вклад успешно открыт!", "success")
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
@@ -158,17 +167,38 @@ func CreateDepositHandler(db *sql.DB) http.HandlerFunc {
 
 func DepositToExistingHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+
 		userIDStr := r.Header.Get("X-User-ID")
 		userID, _ := strconv.Atoi(userIDStr)
 
 		depositID := r.FormValue("deposit_id")
-		amount, _ := strconv.ParseFloat(r.FormValue("amount"), 64)
+		amount, err := strconv.ParseFloat(r.FormValue("amount"), 64)
+		if err != nil || amount <= 0 {
+			setFlash(w, r, "Некорректная сумма пополнения", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
 
-		tx, _ := db.Begin()
+		tx, err := db.Begin()
+		if err != nil {
+			setFlash(w, r, "Ошибка сервера", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
 		defer tx.Rollback()
 
-		_, err := tx.Exec("UPDATE users SET balance = balance - $1 WHERE id = $2 AND balance >= $1", amount, userID)
+		result, err := tx.Exec("UPDATE users SET balance = balance - $1 WHERE id = $2 AND balance >= $1", amount, userID)
 		if err != nil {
+			setFlash(w, r, "Ошибка списания средств", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected == 0 {
 			setFlash(w, r, "Недостаточно средств на балансе для пополнения", "error")
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
@@ -182,8 +212,18 @@ func DepositToExistingHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'DEPOSIT_TO_EXISTING', NOW())`, userID, depositID, amount)
+		if err != nil {
+			setFlash(w, r, "Ошибка записи транзакции", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
 
-		tx.Commit()
+		if err = tx.Commit(); err != nil {
+			setFlash(w, r, "Ошибка сохранения операции", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+
 		setFlash(w, r, fmt.Sprintf("Вклад успешно пополнен на %.2f ₽", amount), "success")
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
@@ -191,15 +231,31 @@ func DepositToExistingHandler(db *sql.DB) http.HandlerFunc {
 
 func WithdrawHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+
 		userIDStr := r.Header.Get("X-User-ID")
 		userID, _ := strconv.Atoi(userIDStr)
 
-		depositID, _ := strconv.Atoi(r.FormValue("deposit_id"))
-		amount, _ := strconv.ParseFloat(r.FormValue("amount"), 64)
-
-		err := repository.WithdrawFromDeposit(db, userID, strconv.Itoa(depositID), amount)
+		depositID, err := strconv.Atoi(r.FormValue("deposit_id"))
 		if err != nil {
-			setFlash(w, r, err.Error(), "error")
+			setFlash(w, r, "Некорректный ID вклада", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+
+		amount, err := strconv.ParseFloat(r.FormValue("amount"), 64)
+		if err != nil || amount <= 0 {
+			setFlash(w, r, "Некорректная сумма снятия", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+
+		err = repository.WithdrawFromDeposit(db, userID, strconv.Itoa(depositID), amount)
+		if err != nil {
+			setFlash(w, r, "Ошибка снятия со вклада", "error")
 		} else {
 			setFlash(w, r, fmt.Sprintf("Со вклада успешно снято %.2f ₽", amount), "success")
 		}
@@ -210,6 +266,11 @@ func WithdrawHandler(db *sql.DB) http.HandlerFunc {
 
 func CloseDepositHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+
 		depositID := r.FormValue("deposit_id")
 		userIDStr := r.Header.Get("X-User-ID")
 		if userIDStr == "" {
@@ -243,16 +304,25 @@ func CloseDepositHandler(db *sql.DB) http.HandlerFunc {
 
 		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) 
                           VALUES ($1, $2, $3, 'CLOSE_DEPOSIT', NOW())`, userID, depositID, amount)
+		if err != nil {
+			setFlash(w, r, "Ошибка записи транзакции", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
 
 		_, err = tx.Exec("DELETE FROM deposits WHERE id = $1", depositID)
-
 		if err != nil {
 			setFlash(w, r, "Ошибка удаления вклада", "error")
 			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
-		tx.Commit()
+		if err = tx.Commit(); err != nil {
+			setFlash(w, r, "Ошибка сохранения операции", "error")
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+			return
+		}
+
 		setFlash(w, r, "Вклад закрыт, средства возвращены на баланс", "success")
 		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}

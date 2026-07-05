@@ -2,7 +2,7 @@ package utils
 
 import (
 	"net/http"
-	"text/template"
+	"html/template"
 )
 
 func GetDepositName(typeID int) string {

@@ -111,7 +111,7 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Неверный пароль"})
+			json.NewEncoder(w).Encode(map[string]string{"error": "Неверный логин или пароль"})
 			return
 		}
 

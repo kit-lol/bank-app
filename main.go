@@ -162,11 +162,20 @@ func main() {
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
 	logger.Log.Info("🌍 Сервер слушает порт", zap.String("address", addr))
 
+	// Security headers middleware
+	secureHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		mux.ServeHTTP(w, r)
+	})
+
 	server := &http.Server{
 		Addr:         addr,
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
-		Handler:      mux,
+		Handler:      secureHandler,
 	}
 
 	logger.Log.Fatal("Ошибка сервера", zap.Error(server.ListenAndServe()))

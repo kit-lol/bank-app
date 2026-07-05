@@ -49,13 +49,22 @@ func AccrueInterest(db *sql.DB) {
 		}
 
 		_, err = tx.Exec("UPDATE deposits SET amount = amount + $1, last_accrual = NOW() WHERE id = $2", d.Interest, d.ID)
-		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'ACCRUAL', NOW())`, d.UserID, d.ID, d.Interest)
-
 		if err != nil {
-			logger.Log.Error("Ошибка при обработке вклада", zap.Error(err), zap.Int("depositID", d.ID))
+			logger.Log.Error("Ошибка обновления суммы вклада", zap.Error(err), zap.Int("depositID", d.ID))
 			tx.Rollback()
+			continue
+		}
+
+		_, err = tx.Exec(`INSERT INTO transactions (user_id, deposit_id, amount, operation_type, created_at) VALUES ($1, $2, $3, 'ACCRUAL', NOW())`, d.UserID, d.ID, d.Interest)
+		if err != nil {
+			logger.Log.Error("Ошибка записи транзакции начисления", zap.Error(err), zap.Int("depositID", d.ID))
+			tx.Rollback()
+			continue
+		}
+
+		if err = tx.Commit(); err != nil {
+			logger.Log.Error("Ошибка коммита транзакции", zap.Error(err), zap.Int("depositID", d.ID))
 		} else {
-			tx.Commit()
 			successCount++
 		}
 	}

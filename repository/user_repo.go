@@ -87,8 +87,7 @@ func GetAllUser(db *sql.DB) ([]models.User, error) {
 	var users []models.User
 	for rows.Next() {
 		var u models.User
-		rows.Scan(&u.ID, &u.Username, &u.Balance, &u.IsActive)
-		if err != nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.Balance, &u.IsActive); err != nil {
 			fmt.Println("Ошибка сканирования:", err)
 			continue
 		}

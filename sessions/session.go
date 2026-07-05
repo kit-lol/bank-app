@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	"log"
 	"net/http"
 	"os"
 
@@ -13,7 +14,7 @@ var Store *sessions.CookieStore
 func InitSession() {
 	secretKey := os.Getenv("SESSION_SECRET")
 	if secretKey == "" {
-		secretKey = "change-this-to-random-secret-key-in-production"
+		log.Fatal("SESSION_SECRET не задан. Установите переменную окружения SESSION_SECRET.")
 	}
 
 	Store = sessions.NewCookieStore([]byte(secretKey))
@@ -23,7 +24,7 @@ func InitSession() {
 		Path:     "/",
 		MaxAge:   86400,
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   true, // Требует HTTPS; для локальной разработки можно временно false
 		SameSite: http.SameSiteLaxMode,
 	}
 }
