@@ -1,7 +1,5 @@
-version: '3.8'
-
 services:
-  # Сервис базы данных
+  # ── База данных ──────────────────────────────────────────────────────────────
   db:
     image: postgres:15-alpine
     restart: always
@@ -9,17 +7,23 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  # Сервис приложения
+  # ── Приложение ───────────────────────────────────────────────────────────────
   app:
     build: .
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy   # ждём, пока Postgres не примет соединения
     environment:
       DB_HOST: db
       DB_USER: ${DB_USER}

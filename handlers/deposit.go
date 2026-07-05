@@ -73,8 +73,17 @@ func DepositHandler(db *sql.DB) http.HandlerFunc {
 func OpenDepositPageHandler(db *sql.DB, depositTypes []models.DepositTypeExtended) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+		data := struct {
+			Types     []models.DepositTypeExtended
+			CSRFField template.HTML
+		}{
+			Types:     depositTypes,
+			CSRFField: template.HTML(""),
+		}
+
 		tmpl := template.Must(template.ParseFiles("templates/open_deposit.html"))
-		tmpl.Execute(w, depositTypes)
+		tmpl.Execute(w, data)
 	}
 }
 

@@ -45,9 +45,10 @@
                 <p class="auth-subtitle">Заполните форму для открытия нового вклада.</p>
 
                 <form action="/create-deposit" method="POST" class="auth-form">
+                    {{ .CSRFField }}
                     <label style="color: var(--gray); font-size: 14px; font-weight: 500;">Тип вклада</label>
                     <select name="type_id" class="input-sea" style="width: 100%; padding: 17px;" required>
-                        {{ range . }}
+                        {{ range .Types }}
                         <option value="{{ .ID }}">{{ .Name }} (Ставка: {{ .InterestRate }}%)</option>
                         {{ end }}
                     </select>
@@ -74,7 +75,7 @@
 
     <div class="deposit-grid">
 
-{{ range . }}
+{{ range .Types }}
 
 <div class="deposit-card
 {{ if eq .Name "TIDAL FLEX" }}tidal{{ end }}

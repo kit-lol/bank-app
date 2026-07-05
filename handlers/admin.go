@@ -39,11 +39,13 @@ func AdminDashboardHandler(db *sql.DB) http.HandlerFunc {
 			Total        int
 			ActiveCount  int
 			BlockedCount int
+			CSRFField    template.HTML
 		}{
 			Users:        users,
 			Total:        len(users),
 			ActiveCount:  activeCount,
 			BlockedCount: blockedCount,
+			CSRFField:    template.HTML(""),
 		}
 
 		tmpl := template.Must(template.ParseFiles("templates/admin_dashboard.html"))
@@ -149,10 +151,12 @@ func AdminUserDetailHandler(db *sql.DB) http.HandlerFunc {
 			UserID       int
 			Deposits     []models.Deposit
 			Transactions []models.Transaction
+			CSRFField    template.HTML
 		}{
 			UserID:       userID,
 			Deposits:     deposits,
 			Transactions: transactions,
+			CSRFField:    template.HTML(""),
 		}
 
 		tmpl := template.Must(template.ParseFiles("templates/admin_user_detail.html"))

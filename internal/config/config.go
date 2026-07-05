@@ -155,12 +155,11 @@ func setDefaults(config *Config) {
 // GetDSN возвращает строку подключения к базе данных
 func (c *Config) GetDSN() string {
 	return fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		c.Database.Host,
 		c.Database.Port,
 		c.Database.User,
 		c.Database.Password,
 		c.Database.Name,
-		c.Database.SSLMode,
 	)
 }

@@ -64,6 +64,7 @@
                         <td>
                             {{ if eq .Status "ACTIVE" }}
                             <form action="/admin/close-deposit" method="POST" style="display: inline;">
+                                {{ $.CSRFField }}
                                 <input type="hidden" name="deposit_id" value="{{ .ID }}">
                                 <input type="hidden" name="user_id" value="{{ $.UserID }}">
                                 <button class="btn-small btn-small-danger" type="submit">Закрыть вклад</button>

@@ -47,6 +47,13 @@
 
 <script src="/static/js/script.js"></script>
 <script>
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -60,10 +67,15 @@
         try {
             console.log("Отправка запроса на /login...");
             
+            const csrfToken = getCookie('_gorilla_csrf');
+
             const response = await fetch('/login', {
                 method: 'POST',
                 body: formData,
-                credentials: 'include' // Важно для кук!
+                credentials: 'include',
+                headers: {
+                    'X-CSRF-Token': csrfToken
+                }
             });
 
             console.log("Статус ответа:", response.status);

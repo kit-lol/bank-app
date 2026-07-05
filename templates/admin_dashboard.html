@@ -72,6 +72,7 @@
                         </td>
                         <td>
                             <form action="/admin/action" method="POST" class="balance-form">
+                                {{ $.CSRFField }}
                                 <input type="hidden" name="user_id" value="{{ .ID }}">
                                 <input type="number" name="amount" placeholder="Сумма" class="balance-input" step="0.01" required>
                                 <button type="submit" name="action" value="add_funds" title="Начислить" style="background:#2ecc71; color:white; border:none; border-radius:4px; cursor:pointer;">+</button>
@@ -81,6 +82,7 @@
                         <td>
                             <div style="display: flex; flex-direction: column; gap: 5px;">
                                 <form action="/admin/action" method="POST">
+                                    {{ $.CSRFField }}
                                     <input type="hidden" name="user_id" value="{{ .ID }}">
                                     <input type="hidden" name="action" value="toggle_status">
                                     <button type="submit" class="action-btn {{ if .IsActive }}btn-block{{ else }}btn-unblock{{ end }}">

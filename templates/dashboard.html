@@ -57,6 +57,7 @@
         <h3>Пополнение счета</h3>
         <p style="color:var(--gray);margin-bottom:25px;">Средства будут зачислены на ваш основной баланс.</p>
         <form action="/deposit" method="POST" class="auth-form">
+            {{ .CSRFField }}
             <input type="number" name="amount" step="0.01" placeholder="Введите сумму пополнения" required>
             <button type="submit" class="btn btn-primary">Пополнить счет</button>
         </form>
@@ -90,6 +91,7 @@
                         <div class="deposit-actions">
                             {{ if .CanDeposit }}
                             <form action="/deposit-to-existing" method="POST">
+                                {{ $.CSRFField }}
                                 <input type="hidden" name="deposit_id" value="{{ .ID }}">
                                 <input class="input-sea" type="number" name="amount" step="0.01" placeholder="Сумма" required>
                                 <button class="btn btn-primary" type="submit">Пополнить</button>
@@ -97,12 +99,14 @@
                             {{ end }}
                             {{ if .CanWithdraw }}
                             <form action="/withdraw-from-deposit" method="POST">
+                                {{ $.CSRFField }}
                                 <input type="hidden" name="deposit_id" value="{{ .ID }}">
                                 <input class="input-sea" type="number" name="amount" step="0.01" placeholder="Сумма" required>
                                 <button class="btn btn-outline" type="submit">Снять</button>
                             </form>
                             {{ end }}
                             <form action="/close-deposit" method="POST">
+                                {{ $.CSRFField }}
                                 <input type="hidden" name="deposit_id" value="{{ .ID }}">
                                 <button class="btn btn-danger" type="submit">Закрыть</button>
                             </form>

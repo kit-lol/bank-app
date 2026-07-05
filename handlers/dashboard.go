@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+
 )
 
 func DashboardHandler(db *sql.DB) http.HandlerFunc {
@@ -77,11 +78,13 @@ func DashboardHandler(db *sql.DB) http.HandlerFunc {
 			Transactions []models.Transaction
 			Deposits     []DepositView
 			Flashes      []map[string]string
+			CSRFField    template.HTML
 		}{
 			User:         user,
 			Transactions: transactions,
 			Deposits:     deposits,
 			Flashes:      flashMessages,
+			CSRFField:    template.HTML(""),
 		}
 
 		tmpl := template.Must(template.ParseFiles("templates/dashboard.html"))

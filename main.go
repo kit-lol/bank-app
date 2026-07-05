@@ -17,6 +17,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
@@ -71,9 +72,9 @@ func main() {
 	logger.Log.Info("✅ Конфигурация загружена успешно")
 
 	// 4. Применение миграций базы данных
-	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
 		cfg.Database.User, cfg.Database.Password, cfg.Database.Host,
-		cfg.Database.Port, cfg.Database.Name, cfg.Database.SSLMode)
+		cfg.Database.Port, cfg.Database.Name)
 
 	logger.Log.Info("🔄 Применение миграций БД...")
 	if err := runMigrations(dbURL); err != nil {
@@ -139,9 +140,9 @@ func main() {
 		fs.ServeHTTP(w, r)
 	})))
 
-	// Маршруты аутентификации
-	mux.HandleFunc("/login", handlers.LoginHandler(db))
-	mux.HandleFunc("/register", handlers.RegisterHandler(db))
+	// Маршруты аутентификации (с защитой от brute-force)
+	mux.HandleFunc("/login", handlers.RateLimitMiddleware(handlers.LoginHandler(db)))
+	mux.HandleFunc("/register", handlers.RateLimitMiddleware(handlers.RegisterHandler(db)))
 	mux.HandleFunc("/logout", handlers.LogoutHandler)
 
 	// Защищенные маршруты пользователей
